@@ -1,5 +1,9 @@
-#include <iostream>
-int main() {
-    std::cout << "Hello, Ninja + CMake!" << std::endl;
-    return 0;
+#include "include/triangleEnumeration.h"
+#include "preProcessing/include/adjacency.h"
+#include <vector>
+using namespace std;
+int main() { 
+	vector<vector<int>> *adjacency = new vector<vector<int>>(); 
+	string filename = "/home/sujat/projects/cse491/graphs/graph1.txt";
+	build_adjacency_list(filename, adjacency);
 }
