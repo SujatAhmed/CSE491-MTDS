@@ -12,7 +12,8 @@ bool degree_cmp(const pair<int, int> &a, const pair<int, int> &b) {
 }
 
 // Triangle listing using the forward algorithm
-void forward_triangle_listing(int n, const vector<vector<int>> &adjacency) {
+int forward_triangle_listing(int n, const vector<vector<int>> &adjacency) {
+  int count = 0;
   // Step 1: Sort vertices by descending degree
   vector<pair<int, int>> degrees;
   for (int i = 0; i < n; ++i)
@@ -43,11 +44,14 @@ void forward_triangle_listing(int n, const vector<vector<int>> &adjacency) {
           int orig_v = degrees[v].first;
           int orig_s = degrees[s].first;
           int orig_t = degrees[t].first;
-          cout << "Triangle: " << orig_v << " " << orig_s << " " << orig_t
-               << "\n";
+          // cout << "Triangle: " << orig_v << " " << orig_s << " " << orig_t
+               // << "\n";
+          count ++;
         }
       }
       A[t].insert(s);
     }
   }
+  cout << "Triangle Count = " << count << endl;
+  return count;
 }

@@ -8,6 +8,6 @@ using AdjacencyList = std::vector<std::vector<int>>;
 
 bool degree_cmp(const std::pair<int, int>& a, const std::pair<int, int>& b);
 
-void forward_triangle_listing(int n, const AdjacencyList& adjacency);
+int forward_triangle_listing(int n, const AdjacencyList& adjacency);
 
 #endif // TRIANGLE_ENUMERATION_H
