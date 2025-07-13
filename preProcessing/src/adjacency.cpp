@@ -28,12 +28,12 @@ void build_adjacency_list(const string &filename, vector<vector<int>> *adjacency
             continue;
         }
 
-        cout << "Read edge: " << u << " " << v << "\n";
+        // cout << "Read edge: " << u << " " << v << "\n";
         max_node = max({max_node, u, v});
         edges.emplace_back(u, v);
     }
 
-    cout << "Max node ID: " << max_node << "\n";
+    // cout << "Max node ID: " << max_node << "\n";
 
     adjacency->assign(max_node + 1, vector<int>());
 
@@ -46,7 +46,7 @@ void build_adjacency_list(const string &filename, vector<vector<int>> *adjacency
         (*adjacency)[v].push_back(u);
     }
 
-    cout << "\nAdjacency List:\n";
+    // cout << "\nAdjacency List:\n";
     for (size_t i = 0; i < adjacency->size(); ++i) {
         cout << i << ": ";
         for (int neighbor : (*adjacency)[i]) {
