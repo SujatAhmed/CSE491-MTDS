@@ -2,147 +2,133 @@
 #include <vector>
 #include <set>
 #include <unordered_set>
-#include <algorithm>
+#include <fstream>
 #include <random>
 #include <ctime>
-#include <fstream>
+#include <algorithm>
 
 using namespace std;
 
-const int MAX_TRIES = 10000;
+using Edge = pair<int, int>;
 
-vector<vector<int>> adj_list;
-set<pair<int, int>> edge_set;  // to avoid duplicate edges
-mt19937 rng(time(0));
+void add_triangle_dense_subgraph(int start_node, int size, double threshold, set<Edge> &edges) {
+    int max_triangles = size * (size - 1) * (size - 2) / 6;
+    int target_triangles = static_cast<int>(threshold * size);
 
-// Count triangles in a subgraph
-int count_triangles(const vector<vector<int>>& adj_list, const vector<int>& nodes) {
-    unordered_set<int> node_set(nodes.begin(), nodes.end());
-    int count = 0;
+    int triangle_count = 0;
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(start_node, start_node + size - 1);
 
-    for (int u : nodes) {
-        for (int v : adj_list[u]) {
-            if (v <= u || !node_set.count(v)) continue;
+    while (triangle_count < target_triangles) {
+        int a = dis(gen), b = dis(gen), c = dis(gen);
+        if (a == b || b == c || a == c) continue;
+        vector<int> tri = {a, b, c};
+        sort(tri.begin(), tri.end());
 
-            const auto& adj_u = adj_list[u];
-            const auto& adj_v = adj_list[v];
-            int i = 0, j = 0;
-            while (i < adj_u.size() && j < adj_v.size()) {
-                if (!node_set.count(adj_u[i])) { ++i; continue; }
-                if (!node_set.count(adj_v[j])) { ++j; continue; }
-                if (adj_u[i] == adj_v[j]) {
-                    if (adj_u[i] != u && adj_u[i] != v)
-                        ++count;
-                    ++i; ++j;
-                } else if (adj_u[i] < adj_v[j]) {
-                    ++i;
-                } else {
-                    ++j;
+        Edge e1 = {tri[0], tri[1]};
+        Edge e2 = {tri[1], tri[2]};
+        Edge e3 = {tri[0], tri[2]};
+
+        if (edges.count(e1) && edges.count(e2) && edges.count(e3)) continue;
+
+        edges.insert(e1);
+        edges.insert(e2);
+        edges.insert(e3);
+        triangle_count++;
+    }
+}
+
+void generate_sparse_base_graph(int total_nodes, int dense_nodes_start,
+                                double edge_prob, set<Edge> &edges) {
+    unordered_set<int> connected;
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<> dis(0.0, 1.0);
+
+    for (int i = 0; i < total_nodes; ++i) {
+        for (int j = i + 1; j < total_nodes; ++j) {
+            if (i >= dense_nodes_start || j >= dense_nodes_start) {
+                if (dis(gen) < edge_prob) {
+                    edges.insert({i, j});
+                    connected.insert(i);
+                    connected.insert(j);
                 }
             }
         }
     }
 
-    return count / 3;
-}
-
-// Add undirected edge if it doesn’t exist
-bool add_edge(int u, int v) {
-    if (u == v) return false;
-    if (u > v) swap(u, v);
-    if (edge_set.count({u, v})) return false;
-    edge_set.insert({u, v});
-    adj_list[u].push_back(v);
-    adj_list[v].push_back(u);
-    return true;
-}
-
-// Implant triangle-dense subgraph
-void implant_triangle_dense_subgraph(int N, int subgraph_size, double threshold) {
-    uniform_int_distribution<int> dist(0, N - 1);
-    vector<int> nodes;
-
-    // Pick unique subgraph nodes
-    unordered_set<int> chosen;
-    while (nodes.size() < subgraph_size) {
-        int x = dist(rng);
-        if (chosen.insert(x).second)
-            nodes.push_back(x);
+    int required_connected = total_nodes * 0.7;
+    vector<int> disconnected;
+    for (int i = 0; i < total_nodes; ++i) {
+        if (connected.count(i) == 0) disconnected.push_back(i);
     }
 
-    // Try adding random edges until triangle density ≥ threshold
-    int tries = 0;
-    while (tries < MAX_TRIES) {
-        // Shuffle and add random edge
-        int u = nodes[rng() % subgraph_size];
-        int v = nodes[rng() % subgraph_size];
-        if (add_edge(u, v)) {
-            ++tries;
-            for (int node : nodes)
-                sort(adj_list[node].begin(), adj_list[node].end()); // keep sorted for set intersection
-
-            int triangles = count_triangles(adj_list, nodes);
-            double density = (double)triangles / subgraph_size;
-
-            if (density >= threshold) {
-                cout << "✅ Implanted subgraph with density " << density << " (" << triangles << " triangles)\n";
-                return;
-            }
+    shuffle(disconnected.begin(), disconnected.end(), gen);
+    int idx = 0;
+    while ((int)connected.size() < required_connected && idx < disconnected.size()) {
+        int u = disconnected[idx++];
+        int v = gen() % total_nodes;
+        while (v == u || edges.count({min(u, v), max(u, v)})) {
+            v = gen() % total_nodes;
         }
+        edges.insert({min(u, v), max(u, v)});
+        connected.insert(u);
+        connected.insert(v);
     }
-
-    cout << "⚠️ Failed to reach threshold in max tries.\n";
 }
 
 int main() {
-    int N, choice;
-    int min_nodes = 100, max_nodes = 300;
-    int T;
-    double threshold;
+    srand(time(nullptr));
 
-    cout << "Choose graph size option:\n";
-    cout << "1. Set number of nodes manually\n";
-    cout << "2. Randomize number of nodes (" << min_nodes << "-" << max_nodes << ")\n";
-    cin >> choice;
+    int total_nodes;
+    string input;
+    cout << "Enter number of nodes (or type 'random'): ";
+    cin >> input;
 
-    if (choice == 1) {
-        cout << "Enter number of nodes: ";
-        cin >> N;
+    if (input == "random") {
+        total_nodes = rand() % 101 + 50; // Between 50 and 150
+        cout << "Randomly selected number of nodes: " << total_nodes << endl;
     } else {
-        uniform_int_distribution<int> dist(min_nodes, max_nodes);
-        N = dist(rng);
-        cout << "Randomized number of nodes: " << N << "\n";
+        total_nodes = stoi(input);
     }
 
-    adj_list.resize(N);
-
+    int num_dense_subgraphs;
+    double threshold;
     cout << "Enter number of triangle-dense subgraphs to implant: ";
-    cin >> T;
-
-    cout << "Enter triangle density threshold (e.g., 1.5): ";
+    cin >> num_dense_subgraphs;
+    cout << "Enter triangle density threshold (e.g., 2.0 means 2 triangles per node): ";
     cin >> threshold;
 
-    int subgraph_size = 10;  // fixed for now, can be input later
+    string output_filename;
+    cout << "Enter output filename (with .edges extension): ";
+    cin >> output_filename;
 
-    // Start implanting
-    for (int i = 0; i < T; ++i) {
-        cout << "\nImplanting dense subgraph #" << i + 1 << "...\n";
-        implant_triangle_dense_subgraph(N, subgraph_size, threshold);
+    set<Edge> edges;
+    int nodes_per_subgraph = total_nodes / (num_dense_subgraphs + 1);
+    int next_dense_start = 0;
+
+    for (int i = 0; i < num_dense_subgraphs; ++i) {
+        add_triangle_dense_subgraph(next_dense_start, nodes_per_subgraph, threshold, edges);
+        next_dense_start += nodes_per_subgraph;
     }
 
-    // Output final edges
-    ofstream outfile("synthetic_graph.edges");
-    if (!outfile) {
-        cerr << "❌ Failed to open output file.\n";
+    // Fill rest of graph with sparse base
+    double edge_prob = 0.01; // Very sparse
+    generate_sparse_base_graph(total_nodes, next_dense_start, edge_prob, edges);
+
+    // Save to user-named file
+    ofstream outfile(output_filename);
+    if (!outfile.is_open()) {
+        cerr << "❌ Failed to open output file: " << output_filename << endl;
         return 1;
     }
 
-    outfile << "# Nodes: " << N << ", Edges: " << edge_set.size() << "\n";
-        for (auto& [u, v] : edge_set) {
-            outfile << u << " " << v << "\n";
-        }
+    for (const auto &e : edges) {
+        outfile << e.first << " " << e.second << "\n";
+    }
+    outfile.close();
 
-    cout << "\n✅ Saved edge list to synthetic_graph.edges\n";
-
+    cout << "✅ Graph saved to: " << output_filename << " with " << edges.size() << " edges.\n";
     return 0;
 }
