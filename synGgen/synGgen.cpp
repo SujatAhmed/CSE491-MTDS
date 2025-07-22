@@ -87,7 +87,7 @@ int main() {
     cin >> input;
 
     if (input == "random") {
-        total_nodes = rand() % 101 + 50; // Between 50 and 150
+        total_nodes = rand() % 9901 + 100; // Between 100 and 10000
         cout << "Randomly selected number of nodes: " << total_nodes << endl;
     } else {
         total_nodes = stoi(input);
@@ -97,7 +97,7 @@ int main() {
     double threshold;
     cout << "Enter number of triangle-dense subgraphs to implant: ";
     cin >> num_dense_subgraphs;
-    cout << "Enter triangle density threshold (e.g., 2.0 means 2 triangles per node): ";
+    cout << "Enter triangle density threshold: ";
     cin >> threshold;
 
     string output_filename;
@@ -114,7 +114,9 @@ int main() {
     }
 
     // Fill rest of graph with sparse base
-    double edge_prob = 0.01; // Very sparse
+    double edge_prob;
+    cout << "Enter the Graph Density: \n" << "Cheat Sheet: \n< 0.001	Ultra Sparse \n0.001–0.01	Very Sparse\n0.01–0.05	Sparse\n0.05–0.1	Semi-Sparse\n0.1–0.3	Moderate Density\n0.3–0.6	Dense\n> 0.6	Very Dense\n= 1.0	Complete Graph\n";
+    cin >> edge_prob; 
     generate_sparse_base_graph(total_nodes, next_dense_start, edge_prob, edges);
 
     // Save to user-named file
