@@ -13,6 +13,7 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
                                                  double theta) {
   set<int> Vt = seed;
   int t = 0;
+  double f_Vprime;
 
   while (true) {
     set<int> Vt1 = Vt;
@@ -35,11 +36,12 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
       vector<vector<int>> subgraphAdjacency =
           get_subgraph_adjacency(adj, V_prime);
 
-      double f_Vprime =
-          triangleDensity(graphSize, subgraphAdjacency, V_prime.size());
+      f_Vprime = triangleDensity(graphSize, subgraphAdjacency, V_prime.size());
+
+      cout << "Triangle Density After Addition: " << f_Vprime << endl;
       if (f_Vprime >= theta) {
         Vt1 = V_prime;
-        f_Vt = f_Vprime;
+        // f_Vt = f_Vprime;
       }
     }
 
@@ -60,6 +62,8 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
 
       double f_Vdoubleprime =
           triangleDensity(graphSize, subgraphAdjacency, V_doubleprime.size());
+      cout << "Triangle Density After Deletion: " << f_Vdoubleprime << endl;
+
       if (f_Vdoubleprime >= theta) {
         Vt1 = V_doubleprime;
         f_Vt = f_Vdoubleprime;
@@ -73,7 +77,7 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
     ++t;
   }
   cout << "Maximal Subgraph" << endl;
-  for (int val : Vt){
+  for (int val : Vt) {
     cout << val << " ";
   }
   cout << endl;
