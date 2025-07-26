@@ -30,7 +30,10 @@ set<int> bfs_component(const vector<vector<int>> &adj, int start, vector<bool> &
 
 int main() {
     vector<vector<int>> *adjacency = new vector<vector<int>>();
-    string filename = "graphs/testGraph2.edges";  // adjust if needed
+    string fn;
+    cout << "Enter the file name: ";
+    cin >> fn;
+    string filename = fn;  // adjust if needed
     build_adjacency_list(filename, adjacency);
 
     vector<bool> visited(adjacency->size(), false);

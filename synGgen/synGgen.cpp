@@ -6,131 +6,282 @@
 #include <random>
 #include <ctime>
 #include <algorithm>
+#include <numeric>
+#include <utility>
 
 using namespace std;
 
-using Edge = pair<int, int>;
+void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs);
+void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs, const vector<vector<int>>& adj);
 
-void add_triangle_dense_subgraph(int start_node, int size, double threshold, set<Edge> &edges) {
-    int max_triangles = size * (size - 1) * (size - 2) / 6;
-    int target_triangles = static_cast<int>(threshold * size);
+// Global random number generator
+random_device rd;
+mt19937 gen(rd());
 
-    int triangle_count = 0;
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(start_node, start_node + size - 1);
+// Generate a subgraph of given size
+vector<int> randSubSetGen(const vector<int>& nodeset, int num_nodes) {
+    if (nodeset.empty() || num_nodes <= 0) {
+        return {}; // Return empty if nodeset is empty or num_nodes is non-positive
+    }
 
-    while (triangle_count < target_triangles) {
-        int a = dis(gen), b = dis(gen), c = dis(gen);
-        if (a == b || b == c || a == c) continue;
-        vector<int> tri = {a, b, c};
-        sort(tri.begin(), tri.end());
+    vector<int> nodeSubset = nodeset; // Create a mutable copy
+    shuffle(nodeSubset.begin(), nodeSubset.end(), gen); // Using custom generator
 
-        Edge e1 = {tri[0], tri[1]};
-        Edge e2 = {tri[1], tri[2]};
-        Edge e3 = {tri[0], tri[2]};
-
-        if (edges.count(e1) && edges.count(e2) && edges.count(e3)) continue;
-
-        edges.insert(e1);
-        edges.insert(e2);
-        edges.insert(e3);
-        triangle_count++;
+    if (num_nodes >= nodeSubset.size()) {
+        return nodeSubset; // Return all nodes shuffled
+    } else {
+        nodeSubset.resize(num_nodes); // Resize to the desired number of elements
+        return nodeSubset;            // Return the resized subset
     }
 }
 
-void generate_sparse_base_graph(int total_nodes, int dense_nodes_start,
-                                double edge_prob, set<Edge> &edges) {
-    unordered_set<int> connected;
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_real_distribution<> dis(0.0, 1.0);
 
-    for (int i = 0; i < total_nodes; ++i) {
-        for (int j = i + 1; j < total_nodes; ++j) {
-            if (i >= dense_nodes_start || j >= dense_nodes_start) {
-                if (dis(gen) < edge_prob) {
-                    edges.insert({i, j});
-                    connected.insert(i);
-                    connected.insert(j);
+// Form a clique within a subgraph
+void makeClique(vector<vector<int>>& adj, const vector<int>& subset_nodes) {
+    for (int i = 0; i < subset_nodes.size(); ++i) {
+        for (int j = i + 1; j < subset_nodes.size(); ++j) {
+            int u = subset_nodes[i];
+            int v = subset_nodes[j];
+            adj[u][v] = 1;
+            adj[v][u] = 1;
+        }
+    }
+}
+
+float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset) {
+    int num_triangles = 0;
+    int k = subset.size(); // Number of nodes in the subgraph
+
+    // If there are fewer than 3 nodes, no triangles are possible.
+    if (k < 3) {
+        return 0.0f;
+    }
+
+    // Iterate through all unique combinations of three nodes (u, v, w) from the subset
+    for (int i = 0; i < k; ++i) {
+        for (int j = i + 1; j < k; ++j) {
+            for (int l = j + 1; l < k; ++l) {
+                int u = subset[i];
+                int v = subset[j];
+                int w = subset[l];
+
+                // Check if edges (u,v), (v,w), and (w,u) exist
+                // The adj matrix stores 1 for an edge, 0 otherwise.
+                if (adj[u][v] == 1 && adj[v][w] == 1 && adj[w][u] == 1) {
+                    num_triangles++;
                 }
             }
         }
     }
 
-    int required_connected = total_nodes * 0.7;
-    vector<int> disconnected;
-    for (int i = 0; i < total_nodes; ++i) {
-        if (connected.count(i) == 0) disconnected.push_back(i);
+    // Calculate the number of possible triangles (k choose 3)
+    // Formula: k * (k - 1) * (k - 2) / 6
+    // Use long long for intermediate calculation to prevent overflow before division
+    int possible_triangles = (int)k * (k - 1) * (k - 2) / 6;
+
+    if (possible_triangles == 0) {
+        return 0.0f; // Avoid division by zero if k < 3 (already handled, but good for safety)
     }
 
-    shuffle(disconnected.begin(), disconnected.end(), gen);
-    int idx = 0;
-    while ((int)connected.size() < required_connected && idx < disconnected.size()) {
-        int u = disconnected[idx++];
-        int v = gen() % total_nodes;
-        while (v == u || edges.count({min(u, v), max(u, v)})) {
-            v = gen() % total_nodes;
+    cout << "\n\n Tri: " << num_triangles << "\n pt: " << possible_triangles << "\n\n";
+
+    return static_cast<float>(num_triangles) / possible_triangles;
+}
+
+
+
+// Remove edges from clique to get to desired threshold
+void removeEdgesToMatchTriangleDensity(vector<vector<int>>& adj, const vector<int>& subset, float tridense) {
+    vector<pair<int, int>> edges;
+
+    // Collect all edges within the subset
+    for (int i = 0; i < subset.size(); ++i) {
+        for (int j = i + 1; j < subset.size(); ++j) {
+            int u = subset[i];
+            int v = subset[j];
+            if (adj[u][v] == 1) {
+                edges.emplace_back(u, v);
+            }
         }
-        edges.insert({min(u, v), max(u, v)});
-        connected.insert(u);
-        connected.insert(v);
     }
+
+    // Shuffle edges to remove randomly
+    shuffle(edges.begin(), edges.end(), gen);
+
+    for (const auto& edge : edges) {
+        int u = edge.first;
+        int v = edge.second;
+
+        // Temporarily remove the edge
+        adj[u][v] = 0;
+        adj[v][u] = 0;
+
+        float current_density = triangleDensity(adj, subset);
+        cout << "\nCD: " << current_density << " td: " << tridense << "\n\n";
+        if (current_density < tridense) {
+            // Restore the edge if triangle density drops too low
+            adj[u][v] = 1;
+            adj[v][u] = 1;
+        }
+    }
+
+    // Final density print
+    float final_density = triangleDensity(adj, subset);
+}
+
+
+// Connect the nodes to form the sparse graph
+void connectNodes(vector<vector<int>>& adj,
+                  const vector<vector<int>>& subgraphs,
+                  const vector<int>& unused_nodes,
+                  double prob_between,
+                  double prob_external,
+                  double prob_amongNonSub,
+                  int max_edges_between_subgraphs,
+                  int n,
+                  const vector<int>& node_to_subgraph
+                ) {
+
+    uniform_real_distribution<> dis(0, 1);
+
+    // Connect subgraphs with a limit on edges to prevent merging
+    for (size_t i = 0; i < subgraphs.size(); ++i) {
+        for (size_t j = i + 1; j < subgraphs.size(); ++j) {
+            uniform_int_distribution<> cap_dist(1, max_edges_between_subgraphs);
+            int edges_cap = cap_dist(gen);
+            int edges_added = 0;
+
+            for (int u : subgraphs[i]) {
+                for (int v : subgraphs[j]) {
+                    if (edges_added >= edges_cap) break;
+
+                    // Skip if u and v belong to the same subgraph (should never happen here but just in case)
+                    if (node_to_subgraph[u] == node_to_subgraph[v] && node_to_subgraph[u] != -1) continue;
+
+                    if (dis(gen) < prob_between) {
+                        adj[u][v] = adj[v][u] = 1;
+                        edges_added++;
+                    }
+                }
+                if (edges_added >= edges_cap) break;
+            }
+        }
+    }
+
+    // Connect subgraphs to unused nodes with given probability
+    for (const auto& sg : subgraphs) {
+        for (int u : sg) {
+            for (int v : unused_nodes) {
+                // Skip if both in same subgraph (should not happen here)
+                if (node_to_subgraph[u] == node_to_subgraph[v] && node_to_subgraph[u] != -1) continue;
+
+                if (dis(gen) < prob_external) {
+                    adj[u][v] = adj[v][u] = 1;
+                }
+            }
+        }
+    }
+
+    // Connect unused nodes among themselves with given probability
+    for (size_t i = 0; i < unused_nodes.size(); ++i) {
+        for (size_t j = i + 1; j < unused_nodes.size(); ++j) {
+            if (dis(gen) < prob_amongNonSub) {
+                int u = unused_nodes[i];
+                int v = unused_nodes[j];
+                adj[u][v] = adj[v][u] = 1;
+            }
+        }
+    }
+}
+
+// Main generator
+vector<vector<int>> generateSyntheticGraph(int n, int t, double th, double prob_between, double prob_external, double prob_amongNonSub, int max_edges_between_subgraphs) {
+    vector<int> full_node_set(n);
+    iota(full_node_set.begin(), full_node_set.end(), 0);
+
+    vector<int> available_nodes = full_node_set;
+    vector<vector<int>> adj(n, vector<int>(n, 0));
+    vector<vector<int>> triangle_subgraphs;
+    vector<int> node_to_subgraph(n, -1);  // -1 = not assigned
+
+    for (int i = 1; i <= t; ++i) {
+        int s = (n / t) - 1;
+        int subgraph_size = (rand() % (s - 3 + 1)) + 3;
+        cout << "i:" << i << "\n";
+
+        vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
+        makeClique(adj, subset);
+        float current_density = triangleDensity(adj, subset);
+        cout << "\n\nafter forming cl: " << current_density << "\n\n";
+
+        double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
+
+        removeEdgesToMatchTriangleDensity(adj, subset, tridense);
+
+        for (int node : subset) {
+            available_nodes.erase(remove(available_nodes.begin(), available_nodes.end(), node), available_nodes.end());
+            node_to_subgraph[node] = i;  // Mark the TDS index
+        }
+
+        triangle_subgraphs.push_back(subset);
+    }
+    printTriangleDenseSubgraphs(triangle_subgraphs, adj);
+
+    connectNodes(adj, triangle_subgraphs, available_nodes, prob_between, prob_external, prob_amongNonSub, max_edges_between_subgraphs, n, node_to_subgraph);
+
+
+    return adj;
+}
+
+void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs, const vector<vector<int>>& adj) {
+    cout << "\n--- Generated Triangle-Dense Subgraphs and Densities ---" << endl;
+    if (subgraphs.empty()) {
+        cout << "No triangle-dense subgraphs were generated." << endl;
+        return;
+    }
+
+    for (size_t i = 0; i < subgraphs.size(); ++i) {
+        const vector<int>& current_subset = subgraphs[i]; // Get the current subgraph (subset of nodes)
+        float density = triangleDensity(adj, current_subset); // Calculate density for this subgraph
+
+        cout << "Subgraph " << i + 1 << " (Nodes): [";
+        for (size_t j = 0; j < current_subset.size(); ++j) {
+            cout << current_subset[j];
+            if (j < current_subset.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << "] - Density: " << density << endl; // Print the density
+    }
+    cout << "----------------------------------------------------" << endl;
 }
 
 int main() {
-    srand(time(nullptr));
+    int n = 25;       // total nodes
+    int t = 2;         // triangle-rich subgraphs
+    double th = 0.45;   // density threshold
+    double prob_between = 0.01;
+    double prob_external = 0.05;
+    double prob_amongNonSub = 0.05;
+    int max_edges_between_subgraphs = 2;
 
-    int total_nodes;
-    string input;
-    cout << "Enter number of nodes (or type 'random'): ";
-    cin >> input;
+    string filename;
+    cout << "Enter output file name (with .edges extension): ";
+    cin >> filename;
 
-    if (input == "random") {
-        total_nodes = rand() % 9901 + 100; // Between 100 and 10000
-        cout << "Randomly selected number of nodes: " << total_nodes << endl;
-    } else {
-        total_nodes = stoi(input);
-    }
+    vector<vector<int>> graph = generateSyntheticGraph(n, t, th, prob_between, prob_external, prob_amongNonSub, max_edges_between_subgraphs);
 
-    int num_dense_subgraphs;
-    double threshold;
-    cout << "Enter number of triangle-dense subgraphs to implant: ";
-    cin >> num_dense_subgraphs;
-    cout << "Enter triangle density threshold: ";
-    cin >> threshold;
-
-    string output_filename;
-    cout << "Enter output filename (with .edges extension): ";
-    cin >> output_filename;
-
-    set<Edge> edges;
-    int nodes_per_subgraph = total_nodes / (num_dense_subgraphs + 1);
-    int next_dense_start = 0;
-
-    for (int i = 0; i < num_dense_subgraphs; ++i) {
-        add_triangle_dense_subgraph(next_dense_start, nodes_per_subgraph, threshold, edges);
-        next_dense_start += nodes_per_subgraph;
-    }
-
-    // Fill rest of graph with sparse base
-    double edge_prob;
-    cout << "Enter the Graph Density: \n" << "Cheat Sheet: \n< 0.001	Ultra Sparse \n0.001–0.01	Very Sparse\n0.01–0.05	Sparse\n0.05–0.1	Semi-Sparse\n0.1–0.3	Moderate Density\n0.3–0.6	Dense\n> 0.6	Very Dense\n= 1.0	Complete Graph\n";
-    cin >> edge_prob; 
-    generate_sparse_base_graph(total_nodes, next_dense_start, edge_prob, edges);
-
-    // Save to user-named file
-    ofstream outfile(output_filename);
-    if (!outfile.is_open()) {
-        cerr << "❌ Failed to open output file: " << output_filename << endl;
-        return 1;
-    }
-
-    for (const auto &e : edges) {
-        outfile << e.first << " " << e.second << "\n";
+    ofstream outfile(filename);
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            if (graph[i][j]) {
+                outfile << i << " " << j << "\n";
+            }
+        }
     }
     outfile.close();
 
-    cout << "✅ Graph saved to: " << output_filename << " with " << edges.size() << " edges.\n";
+    cout << "Graph saved to " << filename << endl;
+
     return 0;
-}
+} 

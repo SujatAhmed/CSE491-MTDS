@@ -37,6 +37,7 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
 
       double f_Vprime =
           triangleDensity(graphSize, subgraphAdjacency, V_prime.size());
+         
       if (f_Vprime >= theta) {
         Vt1 = V_prime;
         f_Vt = f_Vprime;
