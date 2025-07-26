@@ -3,42 +3,33 @@
 #include <set>
 #include <vector>
 #include "../include/subgraphAdjacency.h"
+#include <unordered_map>
 using namespace std;
 
 vector<vector<int>> get_subgraph_adjacency(const vector<vector<int>> &adj,
                                            const set<int> &SubgraphNodes) {
-  int n = adj.size();
-  vector<vector<int>> sub_adj(n); // same size as original to preserve indices
+    vector<int> nodes(SubgraphNodes.begin(), SubgraphNodes.end());
+    int k = nodes.size();
 
-  // cout << "Building subgraph adjacency...\n";
-  // cout << "Subgraph nodes: ";
-  // for (int u : SubgraphNodes)
-    // cout << u << " ";
-  // cout << "\n\n";
-
-  for (int u : SubgraphNodes) {
-    // cout << "Checking neighbors of node " << u << ": ";
-    // for (int v : adj[u])
-    //   cout << v << " ";
-    // cout << "\n";
-    for (int v : adj[u]) {
-      if (SubgraphNodes.count(v)) {
-        sub_adj[u].push_back(v);
-        // cout << "  --> adding edge " << u << " - " << v << "\n";
-      }
+    // Map global node ID to local index (0...k-1)
+    unordered_map<int, int> globalToLocal;
+    for (int i = 0; i < k; ++i) {
+        globalToLocal[nodes[i]] = i;
     }
-    // cout << "\n";
-  }
 
-  cout << "\nFinal Subgraph Adjacency List:\n";
-  for (int i = 0; i < n; ++i) {
-    if (!sub_adj[i].empty()) {
-      cout << i << ": ";
-      for (int v : sub_adj[i])
-        cout << v << " ";
-      cout << "\n";
+    // Create k x k adjacency matrix
+    vector<vector<int>> sub_adj(k, vector<int>(k, 0));
+
+    for (int i = 0; i < k; ++i) {
+        int u_global = nodes[i];
+        for (int v_global : adj[u_global]) {
+            if (SubgraphNodes.count(v_global)) {
+                int j = globalToLocal[v_global];
+                sub_adj[i][j] = 1;
+            }
+        }
     }
-  }
 
-  return sub_adj;
+    return sub_adj;
 }
+

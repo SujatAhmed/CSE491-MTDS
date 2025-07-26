@@ -1,4 +1,4 @@
-//#include "TriAl.cpp"
+#include "TriAl.h"
 #include <iostream>
 #include <fstream>
 #include <unordered_set>

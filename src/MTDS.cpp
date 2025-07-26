@@ -1,5 +1,4 @@
-
-// #include "../include/subgraphAdjacency.h"
+#include "../include/subgraphAdjacency.h"
 // #include "../include/triangleDensity.h"
 #include <iostream>
 #include <set>           // for std::set
@@ -7,7 +6,7 @@
 #include <vector>        // for std::vector
 using namespace std;
 
-float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset) {
+double triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset) {
     int num_triangles = 0;
     int k = subset.size(); // Number of nodes in the subgraph
 
@@ -44,7 +43,7 @@ float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset)
 
     // cout << "\n\n Tri: " << num_triangles << "\n pt: " << possible_triangles << "\n\n";
 
-    return static_cast<float>(num_triangles) / possible_triangles;
+    return static_cast<double>(num_triangles) / possible_triangles;
 }
 
 set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
@@ -71,13 +70,10 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
       set<int> V_prime = Vt1;
 
       V_prime.insert(v);
-
       vector<vector<int>> subgraphAdjacency =
           get_subgraph_adjacency(adj, V_prime);
-
       vector<int> subset(V_prime.begin(), V_prime.end());
       double f_Vprime = triangleDensity(subgraphAdjacency, subset);
-
          
       if (f_Vprime >= theta) {
         Vt1 = V_prime;
