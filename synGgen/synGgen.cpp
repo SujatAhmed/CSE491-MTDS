@@ -83,12 +83,10 @@ float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset)
         return 0.0f; // Avoid division by zero if k < 3 (already handled, but good for safety)
     }
 
-    cout << "\n\n Tri: " << num_triangles << "\n pt: " << possible_triangles << "\n\n";
+    // cout << "\n\n Tri: " << num_triangles << "\n pt: " << possible_triangles << "\n\n";
 
     return static_cast<float>(num_triangles) / possible_triangles;
 }
-
-
 
 // Remove edges from clique to get to desired threshold
 void removeEdgesToMatchTriangleDensity(vector<vector<int>>& adj, const vector<int>& subset, float tridense) {
@@ -117,7 +115,7 @@ void removeEdgesToMatchTriangleDensity(vector<vector<int>>& adj, const vector<in
         adj[v][u] = 0;
 
         float current_density = triangleDensity(adj, subset);
-        cout << "\nCD: " << current_density << " td: " << tridense << "\n\n";
+        // cout << "\nCD: " << current_density << " td: " << tridense << "\n\n";
         if (current_density < tridense) {
             // Restore the edge if triangle density drops too low
             adj[u][v] = 1;
@@ -207,12 +205,12 @@ vector<vector<int>> generateSyntheticGraph(int n, int t, double th, double prob_
     for (int i = 1; i <= t; ++i) {
         int s = (n / t) - 1;
         int subgraph_size = (rand() % (s - 3 + 1)) + 3;
-        cout << "i:" << i << "\n";
+        // cout << "i:" << i << "\n";
 
         vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
         makeClique(adj, subset);
         float current_density = triangleDensity(adj, subset);
-        cout << "\n\nafter forming cl: " << current_density << "\n\n";
+        // cout << "\n\nafter forming cl: " << current_density << "\n\n";
 
         double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
 
@@ -257,9 +255,9 @@ void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs, const vec
 }
 
 int main() {
-    int n = 25;       // total nodes
-    int t = 2;         // triangle-rich subgraphs
-    double th = 0.45;   // density threshold
+    int n = 40;       // total nodes
+    int t = 3;         // triangle-rich subgraphs
+    double th = 0.6;   // density threshold
     double prob_between = 0.01;
     double prob_external = 0.05;
     double prob_amongNonSub = 0.05;
