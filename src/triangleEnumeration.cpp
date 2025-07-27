@@ -44,8 +44,8 @@ int forward_triangle_listing(int n, const vector<vector<int>> &adjacency) {
           int orig_v = degrees[v].first;
           int orig_s = degrees[s].first;
           int orig_t = degrees[t].first;
-          // cout << "Triangle: " << orig_v << " " << orig_s << " " << orig_t
-               // << "\n";
+          cout << "Triangle: " << orig_v << " " << orig_s << " " << orig_t
+               << "\n";
           count ++;
         }
       }
