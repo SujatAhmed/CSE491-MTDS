@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath> // for exp()
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -48,6 +49,9 @@ void makeClique(vector<vector<int>> &adj, const vector<int> &subset_nodes) {
   }
 }
 
+// Sigmoid Function
+float sigmoid(float x) { return 1.0f / (1.0f + exp(-x)); }
+
 float triangleDensity(const vector<vector<int>> &adj,
                       const vector<int> &subset) {
   int num_triangles = 0;
@@ -76,21 +80,13 @@ float triangleDensity(const vector<vector<int>> &adj,
     }
   }
 
-  // Calculate the number of possible triangles (k choose 3)
-  // Formula: k * (k - 1) * (k - 2) / 6
-  // Use long long for intermediate calculation to prevent overflow before
-  // division
-  int possible_triangles = (int)k * (k - 1) * (k - 2) / 6;
+  float rawDensity = static_cast<float>(num_triangles) / k;
+  // cout << "Triangles: " << num_triangles
+  //  << ", Nodes: " << k
+  //  << ", Raw: " << rawDensity
+  //  << ", Tuned: " << sigmoid(rawDensity) << endl;
 
-  if (possible_triangles == 0) {
-    return 0.0f; // Avoid division by zero if k < 3 (already handled, but good
-                 // for safety)
-  }
-
-  // cout << "\n\n Tri: " << num_triangles << "\n pt: " << possible_triangles <<
-  // "\n\n";
-
-  return static_cast<float>(num_triangles) / possible_triangles;
+  return sigmoid(rawDensity);
 }
 
 // Remove edges from clique to get to desired threshold
@@ -205,13 +201,13 @@ void connectNodes(vector<vector<int>> &adj,
 pair<vector<vector<int>>, vector<int>>
 generateSyntheticGraph(int n, int t, double th, double prob_between,
                        double prob_external, double prob_amongNonSub,
-                       int max_edges_between_subgraphs) {
+                       int max_edges_between_subgraphs,
+                       vector<vector<int>> &triangle_subgraphs) {
   vector<int> full_node_set(n);
   iota(full_node_set.begin(), full_node_set.end(), 0);
 
   vector<int> available_nodes = full_node_set;
   vector<vector<int>> adj(n, vector<int>(n, 0));
-  vector<vector<int>> triangle_subgraphs;
   vector<int> node_to_subgraph(n, -1); // -1 = not assigned
 
   for (int i = 1; i <= t; ++i) {
@@ -243,7 +239,6 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
                prob_external, prob_amongNonSub, max_edges_between_subgraphs, n,
                node_to_subgraph);
 
-  // return adj;
   return {adj, node_to_subgraph};
 }
 
@@ -272,6 +267,37 @@ void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
   }
   cout << "----------------------------------------------------" << endl;
 }
+vector<vector<int>>
+extractOneTriangleFromEachSubgraph(const vector<vector<int>> &subgraphs,
+                                   const vector<vector<int>> &adj) {
+
+  vector<vector<int>> triangles;
+
+  for (const auto &subset : subgraphs) {
+    int k = subset.size();
+    bool found = false;
+
+    // Try all triplets (u,v,w) in the subset
+    for (int i = 0; i < k && !found; ++i) {
+      for (int j = i + 1; j < k && !found; ++j) {
+        for (int l = j + 1; l < k && !found; ++l) {
+          int u = subset[i];
+          int v = subset[j];
+          int w = subset[l];
+
+          if (adj[u][v] == 1 && adj[v][w] == 1 && adj[w][u] == 1) {
+            triangles.push_back({u, v, w});
+            found = true;
+          }
+        }
+      }
+    }
+
+    // If no triangle found, we skip this subgraph
+  }
+
+  return triangles;
+}
 
 int main(int argc, char *argv[]) {
   int n = 40;      // total nodes
@@ -282,25 +308,36 @@ int main(int argc, char *argv[]) {
   double prob_amongNonSub = 0.05;
   int max_edges_between_subgraphs = 2;
 
-  if (argc < 3) {
+  if (argc < 4) {
     cerr << "Usage: " << argv[0]
-         << " <output_filename.edges> <ground_truth_filename.labels>" << endl;
+         << " <output_filename.edges> <ground_truth_filename.labels> "
+            "<seed_filename.txt>"
+         << endl;
     return 1;
   }
 
   string filename = argv[1];
   string label_filename = argv[2];
+  string seed_filename = argv[3];
+
+  string base_dir = "/home/sujat/projects/cse491/graphs/";
+
+  string filePath = base_dir + filename;
+  string labelPath = base_dir + label_filename;
+  string seedPath = base_dir + seed_filename;
+
+  vector<vector<int>> triangle_subgraph;
 
   // vector<vector<int>> graph =
   //     generateSyntheticGraph(n, t, th, prob_between, prob_external,
   //                            prob_amongNonSub, max_edges_between_subgraphs);
   //
 
-  auto [graph, labels] =
-      generateSyntheticGraph(n, t, th, prob_between, prob_external,
-                             prob_amongNonSub, max_edges_between_subgraphs);
+  auto [graph, labels] = generateSyntheticGraph(
+      n, t, th, prob_between, prob_external, prob_amongNonSub,
+      max_edges_between_subgraphs, triangle_subgraph);
 
-  ofstream outfile(filename);
+  ofstream outfile(filePath);
   for (int i = 0; i < n; ++i) {
     for (int j = i + 1; j < n; ++j) {
       if (graph[i][j]) {
@@ -312,12 +349,28 @@ int main(int argc, char *argv[]) {
 
   cout << "Graph saved to " << filename << endl;
 
-  ofstream label_file(label_filename);
+  ofstream label_file(labelPath);
   for (int i = 0; i < labels.size(); ++i) {
     label_file << i << " " << labels[i] << "\n";
   }
   label_file.close();
   cout << "Cluster labels saved to " << label_filename << endl;
+
+  vector<vector<int>> seedTriangles =
+      extractOneTriangleFromEachSubgraph(triangle_subgraph, graph);
+
+  ofstream seed_file(seedPath);
+  for (const auto &triangle : seedTriangles) {
+    for (int i = 0; i < triangle.size(); ++i) {
+      seed_file << triangle[i];
+      if (i < triangle.size() - 1)
+        seed_file << " ";
+    }
+    seed_file << "\n";
+  }
+  seed_file.close();
+
+  cout << "Seed triangles saved to " << seed_filename << endl;
 
   return 0;
 }

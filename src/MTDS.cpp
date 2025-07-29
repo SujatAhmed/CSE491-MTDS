@@ -42,7 +42,7 @@ set<int> locally_optimal_triangle_dense_subgraph(
       cout << "Triangle Density After Addition: " << f_Vprime << endl;
       if (f_Vprime >= theta) {
         Vt1 = V_prime;
-        // f_Vt = f_Vprime;
+        f_Vt = f_Vprime;
       }
     }
 
@@ -54,6 +54,7 @@ set<int> locally_optimal_triangle_dense_subgraph(
           candidate_remove.insert(u);
       }
     }
+    cout << endl;
 
     for (int v : candidate_remove) {
       set<int> V_doubleprime = Vt1;
@@ -67,9 +68,11 @@ set<int> locally_optimal_triangle_dense_subgraph(
 
       if (f_Vdoubleprime >= theta) {
         Vt1 = V_doubleprime;
-        f_Vt = f_Vdoubleprime;
+        // f_Vt = f_Vdoubleprime;
       }
     }
+
+    cout << endl;
 
     if (Vt == Vt1)
       break;
