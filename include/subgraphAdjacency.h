@@ -5,14 +5,16 @@
 
 #include <vector>
 #include <set>
+#include <map>
+using namespace std;
 
 // Generates the adjacency list of a subgraph defined by SubgraphNodes,
 // using the adjacency list of the full graph.
-// Includes console output for debugging.
-std::vector<std::vector<int>> get_subgraph_adjacency(
-    const std::vector<std::vector<int>>& adj,
-    const std::set<int>& SubgraphNodes
-);
+
+map <int, vector<int>>  generateSubgraphAdjacencyMap(map <int, vector<int>> adjacencyMap,
+                                                     set<int> subgraph);
+
+
 
 #endif // SUBGRAPH_ADJACENCY_H
 

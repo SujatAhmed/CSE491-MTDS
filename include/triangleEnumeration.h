@@ -2,12 +2,14 @@
 #define TRIANGLE_ENUMERATION_H
 
 #include <vector>
-#include <utility> // for std::pair
+#include <utility>
+#include <map>
+using namespace std;
 
-using AdjacencyList = std::vector<std::vector<int>>;
 
-bool degree_cmp(const std::pair<int, int>& a, const std::pair<int, int>& b);
 
-int forward_triangle_listing(int n, const AdjacencyList& adjacency);
+int bruteForceTriangleCounting(
+	map<int, vector<int>> adjacencyMap
+);
 
 #endif // TRIANGLE_ENUMERATION_H

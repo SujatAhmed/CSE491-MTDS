@@ -6,30 +6,29 @@
 #include <unordered_map>
 using namespace std;
 
-vector<vector<int>> get_subgraph_adjacency(const vector<vector<int>> &adj,
-                                           const set<int> &SubgraphNodes) {
-    vector<int> nodes(SubgraphNodes.begin(), SubgraphNodes.end());
-    int k = nodes.size();
+map<int, vector<int>> generateSubgraphAdjacencyMap(
+    map<int, vector<int>> adjacencyMap,
+    set<int> subgraph
+) {
+    map<int, vector<int>> subgraphMap;
 
-    // Map global node ID to local index (0...k-1)
-    unordered_map<int, int> globalToLocal;
-    for (int i = 0; i < k; ++i) {
-        globalToLocal[nodes[i]] = i;
-    }
+    for (int node : subgraph) {
+        // Skip if node is not in the original adjacency map
+        if (adjacencyMap.find(node) == adjacencyMap.end()) continue;
 
-    // Create k x k adjacency matrix
-    vector<vector<int>> sub_adj(k, vector<int>(k, 0));
-
-    for (int i = 0; i < k; ++i) {
-        int u_global = nodes[i];
-        for (int v_global : adj[u_global]) {
-            if (SubgraphNodes.count(v_global)) {
-                int j = globalToLocal[v_global];
-                sub_adj[i][j] = 1;
+        vector<int> filteredNeighbors;
+        for (int neighbor : adjacencyMap[node]) {
+            // Only include neighbors also in the subgraph
+            if (subgraph.count(neighbor)) {
+                filteredNeighbors.push_back(neighbor);
             }
+        }
+
+        // Only add node if it has any neighbors in the subgraph
+        if (!filteredNeighbors.empty()) {
+            subgraphMap[node] = filteredNeighbors;
         }
     }
 
-    return sub_adj;
+    return subgraphMap;
 }
-

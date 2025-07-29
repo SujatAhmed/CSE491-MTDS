@@ -18,11 +18,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   map<int, vector<int>> adjacencyMap;
+  map<int, vector<int>> subgraphAdjacencyMap;
+  set<int> subgraph = {39,27,35,2};
 
   string filename = argv[1];
 
   adjacencyMap = generateAdjacencyMap(filename);
-  printMap(adjacencyMap);
+  subgraphAdjacencyMap = generateSubgraphAdjacencyMap(adjacencyMap,subgraph);
+  int count = bruteForceTriangleCounting(subgraphAdjacencyMap);
+
+  cout << "triangle count: " << count << endl;
+
+  // printMap(adjacencyMap);
+  // printMap(subgraphAdjacencyMap);
 
   return 0;
 }
@@ -38,3 +46,6 @@ void printMap(map<int, vector<int>> adjacencyMap) {
   }
 
 }
+
+
+
