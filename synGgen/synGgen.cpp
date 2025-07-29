@@ -351,7 +351,22 @@ int main(int argc, char *argv[]) {
 
   ofstream label_file(labelPath);
   for (int i = 0; i < labels.size(); ++i) {
-    label_file << i << " " << labels[i] << "\n";
+    bool has_edge = false;
+    for (int j = 0; j < graph[i].size(); ++j) {
+      if (graph[i][j] == 1) {
+        has_edge = true;
+        break;
+      }
+    }
+
+    if (!has_edge)
+      continue; // Skip nodes with no connections
+
+    label_file << i << " ";
+    if (labels[i] == -1)
+      label_file << -1 << "\n";
+    else
+      label_file << labels[i] << "\n";
   }
   label_file.close();
   cout << "Cluster labels saved to " << label_filename << endl;

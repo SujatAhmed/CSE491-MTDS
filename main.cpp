@@ -13,6 +13,9 @@ void printMap(map<int, vector<int>> adjacencyMap);
 set<set<int>> readSeedTriangles(const string &filename);
 set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
                                        map<int, vector<int>> adj);
+void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
+                             set<set<int>> maximalSubgraphs,
+                             string predictedFilePath);
 
 int main(int argc, char *argv[]) {
 
@@ -40,10 +43,10 @@ int main(int argc, char *argv[]) {
 
   adjacencyMap = generateAdjacencyMap(filePath);
   seedTriangles = readSeedTriangles(seedPath);
-  maximalSubgraphs = generateMaximalSubgraphs(seedTriangles, theta, adjacencyMap);
-
-
-
+  maximalSubgraphs =
+      generateMaximalSubgraphs(seedTriangles, theta, adjacencyMap);
+  generatePredictedLabels(adjacencyMap, maximalSubgraphs, predictedPath);
+  // printMap(adjacencyMap);
   return 0;
 }
 
@@ -98,4 +101,38 @@ set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
   }
 
   return maximalSubgraphs;
+}
+
+void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
+                             set<set<int>> maximalSubgraphs,
+                             string predictedFilePath) {
+  // Step 1: Initialize all nodes with label -1
+  map<int, int> labels;
+  for (const auto &[node, _] : adjacencyMap) {
+    labels[node] = -1;
+  }
+
+  // Step 2: Assign cluster IDs to nodes in subgraphs
+  int clusterId = 1;
+  for (const auto &subgraph : maximalSubgraphs) {
+    for (int node : subgraph) {
+      labels[node] = clusterId;
+    }
+    clusterId++;
+  }
+
+  // Step 3: Write labels to file
+  ofstream outfile(predictedFilePath);
+  if (!outfile.is_open()) {
+    cerr << "Error opening file: " << predictedFilePath << endl;
+    return;
+  }
+
+  for (const auto &[node, label] : labels) {
+    outfile << node << " " << label << "\n";
+  }
+
+  outfile.close();
+
+  cout << "Predicted labels written to " << predictedFilePath << endl;
 }
