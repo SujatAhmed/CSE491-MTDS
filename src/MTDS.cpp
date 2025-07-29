@@ -62,15 +62,20 @@ set<int> locally_optimal_triangle_dense_subgraph(const vector<vector<int>> &adj,
   while (true) {
     set<int> Vt1 = Vt;
     double f_Vt = 0; // need to find the triangle density of vt1
+    
+    cout << "IN WHILE LOOP" << endl;
 
     // Step 1: Try adding vertices
     unordered_set<int> candidate_add;
     for (int u : Vt) {
+      cout << "In the candidate add loop" << endl;
       for (int v : adj[u]) {
+        cout << "v: " << v << " in u: " << u << endl;
         if (Vt.count(v) == 0)
           candidate_add.insert(v);
       }
     }
+    cout << "After adding vertices" << endl; 
 
     for (int v : candidate_add) {
       set<int> V_prime = Vt1;
