@@ -4,9 +4,12 @@
 #include "include/triangleEnumeration.h"
 #include "preProcessing/include/adjacency.h"
 #include <iostream>
+#include <map>
 #include <set>
 #include <vector>
 using namespace std;
+
+void printMap(map<int, vector<int>> adjacencyMap);
 
 int main(int argc, char *argv[]) {
 
@@ -14,28 +17,24 @@ int main(int argc, char *argv[]) {
     cerr << "Usage: " << argv[0] << " <graph_filename>" << endl;
     return 1;
   }
+  map<int, vector<int>> adjacencyMap;
 
   string filename = argv[1];
 
-  vector<vector<int>> *adjacency = new vector<vector<int>>();
-  build_adjacency_list(filename, adjacency);
-  // forward_triangle_listing(adjacency->size(), *adjacency);
+  adjacencyMap = generateAdjacencyMap(filename);
+  printMap(adjacencyMap);
 
-  // vector<vector<int>> sub_adj = get_subgraph_adjacency(*adjacency,
-  // {39,27,2,35}); for (const auto &row : sub_adj) {
-  //   for (int val : row) {
-  //     cout << val << " ";
-  //   }
-  //   cout << endl;
-  // }
-  // forward_triangle_listing(sub_adj.size(), sub_adj);
-
-  set<int> mySet = {39, 27, 2};
-  locally_optimal_triangle_dense_subgraph(*adjacency, adjacency->size(),
-                                          mySet, 0.3);
-
-  cout << adjacency->size() << endl;
-
-  delete adjacency; // Clean up the allocated memory
   return 0;
+}
+
+void printMap(map<int, vector<int>> adjacencyMap) {
+
+  for (const auto &[node, neighbors] : adjacencyMap) {
+    cout << node << ": ";
+    for (int neighbor : neighbors) {
+      cout << neighbor << " ";
+    }
+    cout << endl;
+  }
+
 }

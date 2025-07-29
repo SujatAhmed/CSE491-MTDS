@@ -4,6 +4,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+using namespace std;
 
 // Builds an adjacency list from a graph file
 // Parameters:
@@ -12,7 +14,6 @@
 // Notes:
 //   - Creates an undirected graph (edges are added in both directions)
 //   - Nodes are assumed to be zero-based or positive integers
-void build_adjacency_list(const std::string& filename,
-                         std::vector<std::vector<int>>* adjacency);
+map<int, vector<int>> generateAdjacencyMap(const std::string& filename);
 
 #endif // ADJACENCY_H

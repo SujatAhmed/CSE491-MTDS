@@ -1,58 +1,33 @@
 
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <iostream>
+#include "../include/adjacency.h"
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace std;
 
-void build_adjacency_list(const string &filename, vector<vector<int>> *adjacency) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Failed to open file: " << filename << "\n";
-        return;
-    }
+map<int, vector<int>> generateAdjacencyMap(const string &filename) {
+  map<int, vector<int>> graph;
+  ifstream infile(filename);
 
-    string line;
-    int u, v;
-    int max_node = 0;
+  if (!infile) {
+    cerr << "Error: Cannot open file " << filename << endl;
+    return graph; // return empty map
+  }
 
-    vector<pair<int, int>> edges;
+  int u, v;
+  while (infile >> u >> v) {
+    // Avoid duplicate entries
+    if (find(graph[u].begin(), graph[u].end(), v) == graph[u].end())
+      graph[u].push_back(v);
+    if (find(graph[v].begin(), graph[v].end(), u) == graph[v].end())
+      graph[v].push_back(u);
+  }
 
-    while (getline(file, line)) {
-        istringstream iss(line);
-        if (!(iss >> u >> v)) {
-            cerr << "Skipping malformed line: " << line << "\n";
-            continue;
-        }
-
-        // cout << "Read edge: " << u << " " << v << "\n";
-        max_node = max({max_node, u, v});
-        edges.emplace_back(u, v);
-    }
-
-    // cout << "Max node ID: " << max_node << "\n";
-
-    adjacency->assign(max_node + 1, vector<int>());
-
-    for (const auto &edge : edges) {
-        int u = edge.first;
-        int v = edge.second;
-
-        // Add both directions for undirected graph
-        (*adjacency)[u].push_back(v);
-        (*adjacency)[v].push_back(u);
-    }
-
-    // cout << "\nAdjacency List:\n";
-    for (size_t i = 0; i < adjacency->size(); ++i) {
-        cout << i << ": ";
-        for (int neighbor : (*adjacency)[i]) {
-            cout << neighbor << " ";
-        }
-        cout << "\n";
-    }
+  infile.close();
+  return graph;
 }
-
