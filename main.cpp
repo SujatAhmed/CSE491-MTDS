@@ -19,19 +19,18 @@ int main(int argc, char *argv[]) {
   }
   map<int, vector<int>> adjacencyMap;
   map<int, vector<int>> subgraphAdjacencyMap;
-  set<int> subgraph = {39,27,35,2};
+  set<int> seed = {6,3,33};
+  float theta = 0.2;
 
-  string filename = argv[1];
+  string file = argv[1];
 
-  adjacencyMap = generateAdjacencyMap(filename);
-  subgraphAdjacencyMap = generateSubgraphAdjacencyMap(adjacencyMap,subgraph);
-  int count = bruteForceTriangleCounting(subgraphAdjacencyMap);
+  adjacencyMap = generateAdjacencyMap(file);
 
-  cout << "triangle count: " << count << endl;
-
-  // printMap(adjacencyMap);
-  // printMap(subgraphAdjacencyMap);
-
+  locally_optimal_triangle_dense_subgraph(
+    adjacencyMap,
+    seed,
+    theta
+  );
   return 0;
 }
 
