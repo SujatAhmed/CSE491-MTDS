@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <numeric>
 #include <utility>
+#include <cmath> // for exp()
 
 using namespace std;
 
@@ -48,6 +49,11 @@ void makeClique(vector<vector<int>>& adj, const vector<int>& subset_nodes) {
     }
 }
 
+//Sigmoid Function
+float sigmoid(float x) {
+    return 1.0f / (1.0f + exp(-x));
+} 
+
 float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset) {
     int num_triangles = 0;
     int k = subset.size(); // Number of nodes in the subgraph
@@ -74,18 +80,13 @@ float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset)
         }
     }
 
-    // Calculate the number of possible triangles (k choose 3)
-    // Formula: k * (k - 1) * (k - 2) / 6
-    // Use long long for intermediate calculation to prevent overflow before division
-    int possible_triangles = (int)k * (k - 1) * (k - 2) / 6;
+    float rawDensity = static_cast<float>(num_triangles) / k;
+    // cout << "Triangles: " << num_triangles 
+    //  << ", Nodes: " << k 
+    //  << ", Raw: " << rawDensity 
+    //  << ", Tuned: " << sigmoid(rawDensity) << endl;
 
-    if (possible_triangles == 0) {
-        return 0.0f; // Avoid division by zero if k < 3 (already handled, but good for safety)
-    }
-
-    // cout << "\n\n Tri: " << num_triangles << "\n pt: " << possible_triangles << "\n\n";
-
-    return static_cast<float>(num_triangles) / possible_triangles;
+    return sigmoid(rawDensity);
 }
 
 // Remove edges from clique to get to desired threshold
