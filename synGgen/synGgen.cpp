@@ -300,25 +300,25 @@ extractOneTriangleFromEachSubgraph(const vector<vector<int>> &subgraphs,
 }
 
 int main(int argc, char *argv[]) {
-  int n = 40;      // total nodes
-  int t = 3;       // triangle-rich subgraphs
-  double th = 0.6; // density threshold
-  double prob_between = 0.01;
+   double prob_between = 0.01;
   double prob_external = 0.05;
   double prob_amongNonSub = 0.05;
   int max_edges_between_subgraphs = 2;
 
-  if (argc < 4) {
+  if (argc < 7) {
     cerr << "Usage: " << argv[0]
          << " <output_filename.edges> <ground_truth_filename.labels> "
-            "<seed_filename.txt>"
+            "<seed_filename.txt> <n> <t> <th>"
          << endl;
     return 1;
   }
-
   string filename = argv[1];
   string label_filename = argv[2];
   string seed_filename = argv[3];
+
+   int n = stoi(argv[4]);       // total nodes
+  int t = stoi(argv[5]);       // triangle-rich subgraphs
+  double th = stod(argv[6]);   // density threshold
 
   string base_dir = "/home/sujat/projects/cse491/graphs/";
 

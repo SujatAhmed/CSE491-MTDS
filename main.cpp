@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <string>
 #include <vector>
 using namespace std;
 
@@ -19,9 +20,9 @@ void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 4) {
+  if (argc < 5) {
     cerr << "Usage: " << argv[0]
-         << " <graph_filename> <seed_filename> <predicted_filename>" << endl;
+         << " <graph_filename> <seed_filename> <predicted_filename> <density_threshold>" << endl;
     return 1;
   }
 
@@ -30,12 +31,13 @@ int main(int argc, char *argv[]) {
   set<set<int>> seedTriangles;
   set<set<int>> maximalSubgraphs;
 
-  float theta = 0.2;
 
   string base_dir = "/home/sujat/projects/cse491/graphs/";
   string file = argv[1];
   string seedFileName = argv[2];
   string predictedFileName = argv[3];
+
+  float theta = stod(argv[4]);
 
   string filePath = base_dir + file;
   string seedPath = base_dir + seedFileName;
