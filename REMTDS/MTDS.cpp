@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <numeric>
 
+// A simple structure to represent an edge
 struct Edge {
     unsigned s;
     unsigned t;
@@ -24,11 +25,11 @@ void find_subgraphs(unsigned start_node,
     component_nodes.insert(start_node);
 
     size_t head = 0;
-    while(head < queue.size()){
+    while (head < queue.size()) {
         unsigned u = queue[head++];
-        if(current_adj.count(u)){
-            for(unsigned v : current_adj.at(u)){
-                if(visited.find(v) == visited.end()){
+        if (current_adj.count(u)) {
+            for (unsigned v : current_adj.at(u)) {
+                if (visited.find(v) == visited.end()) {
                     visited.insert(v);
                     component_nodes.insert(v);
                     queue.push_back(v);
@@ -38,14 +39,33 @@ void find_subgraphs(unsigned start_node,
     }
 }
 
+// Function to check if an edge (u, v) is part of a triangle
+bool is_part_of_triangle(unsigned u, unsigned v, const std::unordered_map<unsigned, std::vector<unsigned>>& adj) {
+    if (!adj.count(u) || !adj.count(v)) {
+        return false;
+    }
+    const auto& neighbors_u = adj.at(u);
+    const auto& neighbors_v = adj.at(v);
+    
+    std::unordered_set<unsigned> u_neighbors_set(neighbors_u.begin(), neighbors_u.end());
+    for (unsigned w : neighbors_v) {
+        if (w != u && u_neighbors_set.count(w)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <edgelist.txt> <theta>" << std::endl;
+    // Corrected usage message for command-line arguments
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0] << " <edgelist.txt> <theta> <dv>" << std::endl;
         return 1;
     }
 
     std::string filename = argv[1];
     double theta = std::stod(argv[2]);
+    unsigned dv = std::stoul(argv[3]); 
 
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -55,66 +75,85 @@ int main(int argc, char* argv[]) {
 
     unsigned u, v;
     unsigned max_node = 0;
-    std::unordered_map<unsigned, std::unordered_set<unsigned>> original_adj;
-
-    // Step 1: Read graph and build adjacency list using unordered_set for faster lookups
+    std::unordered_map<unsigned, std::vector<unsigned>> original_adj;
+    std::unordered_map<unsigned, unsigned> node_degrees;
+    std::unordered_set<unsigned> all_nodes;
+    
+    // Step 1: Read graph and build adjacency list
+    std::vector<Edge> original_edges;
     while (file >> u >> v) {
-        original_adj[u].insert(v);
-        original_adj[v].insert(u);
+        original_edges.push_back({u, v});
+        original_adj[u].push_back(v);
+        original_adj[v].push_back(u);
+        node_degrees[u]++;
+        node_degrees[v]++;
+        all_nodes.insert(u);
+        all_nodes.insert(v);
         max_node = std::max({max_node, u, v});
     }
     file.close();
 
-    std::cout << "Initial number of nodes: " << max_node + 1 << std::endl;
-    std::cout << "Reading graph completed." << std::endl;
+    std::cout << "Initial number of nodes: " << all_nodes.size() << std::endl;
+    std::cout << "Initial number of edges: " << original_edges.size() << std::endl;
 
-    // Step 2 & 3: Find triangles and remove nodes not involved in any triangle
-    std::unordered_map<unsigned, std::vector<unsigned>> filtered_adj;
-    std::unordered_map<unsigned, unsigned> subgraph_triangle_counts;
+    // Step 2: Filter out nodes based on degree dv and remove isolated nodes.
+    std::unordered_map<unsigned, std::vector<unsigned>> degree_filtered_adj;
+    std::unordered_set<unsigned> retained_nodes;
+    
+    std::cout << "Filtering nodes with degree less than " << dv << "..." << std::endl;
 
-    for (const auto& pair_u : original_adj) {
-        unsigned node_u = pair_u.first;
-        if (pair_u.second.size() < 2) continue; // Skip nodes with degree < 2
-        
-        for (unsigned node_v : pair_u.second) {
-            if (node_u > node_v) continue;
-
-            for (unsigned node_w : original_adj[node_v]) {
-                if (node_w > node_u && original_adj.at(node_u).count(node_w)) {
-                    // Triangle (u, v, w) found
-                    filtered_adj[node_u].push_back(node_v);
-                    filtered_adj[node_v].push_back(node_u);
-                    filtered_adj[node_u].push_back(node_w);
-                    filtered_adj[node_w].push_back(node_u);
-                    filtered_adj[node_v].push_back(node_w);
-                    filtered_adj[node_w].push_back(node_v);
-                }
+    for (unsigned node : all_nodes) {
+        if (node_degrees.count(node) && node_degrees[node] >= dv) {
+            retained_nodes.insert(node);
+        }
+    }
+    
+    for (unsigned node : retained_nodes) {
+        for (unsigned neighbor : original_adj[node]) {
+            if (retained_nodes.count(neighbor)) {
+                degree_filtered_adj[node].push_back(neighbor);
             }
         }
     }
 
-    // Now, find connected components in the filtered graph
-    std::vector<std::unordered_set<unsigned>> subgraphs;
-    std::unordered_set<unsigned> visited_nodes;
-    
-    std::cout << "Finding subgraphs..." << std::endl;
+    std::cout << "Nodes after degree filtering: " << retained_nodes.size() << std::endl;
 
-    for (const auto& pair : filtered_adj) {
-        unsigned node = pair.first;
-        if(visited_nodes.find(node) == visited_nodes.end()){
-            std::unordered_set<unsigned> component;
-            find_subgraphs(node, filtered_adj, visited_nodes, component);
-            subgraphs.push_back(component);
+    // Step 3: Remove edges that are not part of any triangle
+    std::unordered_map<unsigned, std::vector<unsigned>> triangle_filtered_adj;
+    std::unordered_set<unsigned> nodes_in_triangle_network;
+    unsigned edges_in_triangle_network = 0;
+
+    for (const auto& pair_u : degree_filtered_adj) {
+        unsigned node_u = pair_u.first;
+        for (unsigned node_v : pair_u.second) {
+            if (node_u < node_v) {
+                if (is_part_of_triangle(node_u, node_v, degree_filtered_adj)) {
+                    triangle_filtered_adj[node_u].push_back(node_v);
+                    triangle_filtered_adj[node_v].push_back(node_u);
+                    nodes_in_triangle_network.insert(node_u);
+                    nodes_in_triangle_network.insert(node_v);
+                    edges_in_triangle_network++;
+                }
+            }
         }
     }
     
-    // Clean up filtered_adj to remove duplicate edges and sort for density calculation
-    for(auto& pair : filtered_adj) {
-        std::sort(pair.second.begin(), pair.second.end());
-        pair.second.erase(std::unique(pair.second.begin(), pair.second.end()), pair.second.end());
+    std::cout << "Nodes in triangle network: " << nodes_in_triangle_network.size() << std::endl;
+    std::cout << "Edges in triangle network: " << edges_in_triangle_network << std::endl;
+
+    // Now find connected components (subgraphs) in the final filtered graph
+    std::vector<std::unordered_set<unsigned>> subgraphs;
+    std::unordered_set<unsigned> visited_nodes;
+
+    for(unsigned node : nodes_in_triangle_network){
+        if(visited_nodes.find(node) == visited_nodes.end()){
+            std::unordered_set<unsigned> component;
+            find_subgraphs(node, triangle_filtered_adj, visited_nodes, component);
+            subgraphs.push_back(component);
+        }
     }
 
-    // Step 4 & 5: Calculate density and filter
+    // Step 4: Calculate density and filter
     std::cout << "\nFound " << subgraphs.size() << " subgraphs." << std::endl;
     std::cout << "Filtering subgraphs with density >= " << theta << std::endl;
     
@@ -126,16 +165,24 @@ int main(int argc, char* argv[]) {
         if (subgraph_nodes.size() < 3) continue;
 
         unsigned long long subgraph_triangles = 0;
+        unsigned num_subgraph_nodes = subgraph_nodes.size();
         
-        // Count triangles in the subgraph
-        for(unsigned node_u : subgraph_nodes) {
-            for(unsigned node_v : filtered_adj[node_u]) {
-                if (node_u < node_v && subgraph_nodes.count(node_v)) {
-                    // Find common neighbors
-                    for(unsigned node_w : filtered_adj[node_v]) {
-                        if (node_v < node_w && subgraph_nodes.count(node_w)) {
-                            if (std::find(filtered_adj[node_u].begin(), filtered_adj[node_u].end(), node_w) != filtered_adj[node_u].end()) {
-                                subgraph_triangles++;
+        for (unsigned node_u : subgraph_nodes) {
+            if (triangle_filtered_adj.count(node_u)) {
+                for (unsigned node_v : triangle_filtered_adj.at(node_u)) {
+                    if (node_u < node_v && subgraph_nodes.count(node_v)) {
+                        for (unsigned node_w : triangle_filtered_adj.at(node_v)) {
+                            if (node_v < node_w && subgraph_nodes.count(node_w)) {
+                                bool uw_edge_exists = false;
+                                for (unsigned neighbor_of_u : triangle_filtered_adj.at(node_u)) {
+                                    if (neighbor_of_u == node_w) {
+                                        uw_edge_exists = true;
+                                        break;
+                                    }
+                                }
+                                if (uw_edge_exists) {
+                                    subgraph_triangles++;
+                                }
                             }
                         }
                     }
@@ -146,8 +193,8 @@ int main(int argc, char* argv[]) {
 
         // Triangle density calculation
         double density = 0.0;
-        if (subgraph_nodes.size() > 0) {
-            double value = static_cast<double>(subgraph_triangles) / subgraph_nodes.size();
+        if (num_subgraph_nodes > 0) {
+            double value = static_cast<double>(subgraph_triangles) / num_subgraph_nodes;
             density = 1.0 / (1.0 + exp(-value));
         }
 
@@ -162,15 +209,17 @@ int main(int argc, char* argv[]) {
             }
             std::cout << "] density: " << density << std::endl;
 
-            // Export subgraph details
-            adj_out << "Subgraph " << subgraph_id << ": Nodes(" << subgraph_nodes.size() << ")\n";
-            for(unsigned node : subgraph_nodes){
+            // Export adjacency list and edges for the dense subgraph
+            adj_out << "Subgraph " << subgraph_id << ": Nodes(" << num_subgraph_nodes << ")\n";
+            for (unsigned node : subgraph_nodes) {
                 adj_out << node << ": ";
-                for(unsigned neighbor : filtered_adj[node]){
-                    if (subgraph_nodes.count(neighbor)) {
-                        adj_out << neighbor << " ";
-                        if (node < neighbor) {
-                            edges_out << node << " " << neighbor << "\n";
+                if (triangle_filtered_adj.count(node)) {
+                    for (unsigned neighbor : triangle_filtered_adj.at(node)) {
+                        if (subgraph_nodes.count(neighbor)) {
+                            adj_out << neighbor << " ";
+                            if (node < neighbor) {
+                                edges_out << node << " " << neighbor << "\n";
+                            }
                         }
                     }
                 }
