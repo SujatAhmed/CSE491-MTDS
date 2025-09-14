@@ -34,8 +34,8 @@ set<int> locally_optimal_triangle_dense_subgraph(map<int, vector<int>> &adj,
 
       f_Vprime = triangleDensity(subgraphAdjacencyMap, V_prime.size());
 
-      cout << "Triangle Density After Addition: " << f_Vprime << endl;
-      if (f_Vprime >= theta && f_Vprime >=f_Vt) {
+      cout << "Triangle Density After Addition of Node: " << v << ": " << f_Vprime << endl;
+      if (f_Vprime >= theta && f_Vprime >= f_Vt) {
         Vt1 = V_prime;
         f_Vt = f_Vprime;
       }
@@ -52,21 +52,25 @@ set<int> locally_optimal_triangle_dense_subgraph(map<int, vector<int>> &adj,
     cout << endl;
 
     for (int v : candidate_remove) {
-      set<int> V_doubleprime = Vt1;
-      V_doubleprime.erase(v);
+      // set<int> V_doubleprime = Vt1;
       map<int, vector<int>> subgraphAdjacencyMap =
-          generateSubgraphAdjacencyMap(adj, V_doubleprime);
-
-      float f_Vdoubleprime =
-          triangleDensity(subgraphAdjacencyMap, V_doubleprime.size());
-      cout << "Triangle Density After Deletion: " << f_Vdoubleprime << endl;
-
-      if (f_Vdoubleprime >= theta && f_Vdoubleprime >= f_Vt) {
-        Vt1 = V_doubleprime;
-        f_Vt = f_Vdoubleprime;
+          generateSubgraphAdjacencyMap(adj, Vt1);
+      int triangleCount = countTrianglesForNode(subgraphAdjacencyMap, v);
+      if(triangleCount == 0){
+        cout << "triangle participation of " << v << " is " << triangleCount << " ";
+        cout << "removing node: " << v << endl;
+        Vt1.erase(v);
       }
     }
 
+    cout << endl;
+
+    cout << "Subgraph After Iteration: " << t << ": " << endl;
+    for (int val : Vt1){
+      cout << val << " ";
+    }
+    cout << endl;
+    cout << "-------------------------------" << endl;
     cout << endl;
 
     if (Vt == Vt1)
@@ -80,6 +84,7 @@ set<int> locally_optimal_triangle_dense_subgraph(map<int, vector<int>> &adj,
     cout << val << " ";
   }
   cout << endl;
+  cout <<  "=================================" << endl;
 
   return Vt;
 }

@@ -1,5 +1,6 @@
 
 #include "../include/triangleEnumeration.h"
+#include <algorithm>
 #include <set>
 #include <vector>
 using namespace std;
@@ -28,3 +29,31 @@ int bruteForceTriangleCounting(map<int, vector<int>> adjacencyMap) {
 
   return triangleCount;
 }
+
+int countTrianglesForNode(const map<int, vector<int>>& subgraphAdjacency, int node) {
+    if (subgraphAdjacency.count(node) == 0) return 0;
+
+    const vector<int>& neighbors = subgraphAdjacency.at(node);
+    int triangleCount = 0;
+
+    // For each pair (node, u), check how many common neighbors they share
+    for (int u : neighbors) {
+        if (subgraphAdjacency.count(u) == 0) continue;
+
+        const vector<int>& u_neighbors = subgraphAdjacency.at(u);
+
+        // Count common neighbors of node and u (excluding node and u themselves)
+        vector<int> intersection;
+        set_intersection(
+            neighbors.begin(), neighbors.end(),
+            u_neighbors.begin(), u_neighbors.end(),
+            back_inserter(intersection)
+        );
+
+        triangleCount += intersection.size();
+    }
+
+    // Each triangle is counted 2 times (once with (node,u), once with (node,w))
+    return triangleCount / 2;
+}
+
