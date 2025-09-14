@@ -6,7 +6,7 @@
 #include <vector>        // for std::vector
 using namespace std;
 
-set<int> locally_optimal_triangle_dense_subgraph(map<int, vector<int>> &adj,
+set<int> cluster_one_version(map<int, vector<int>> &adj,
                                                  set<int> &seed, float &theta) {
   set<int> Vt = seed;
   int t = 0;

@@ -18,7 +18,7 @@
 // - `theta`: triangle density threshold
 // Returns:
 // - A locally optimal triangle-dense subgraph
-set<int> locally_optimal_triangle_dense_subgraph(
+set<int> cluster_one_version(
     map<int, vector<int>> &adj,
     set<int> &seed,
     float &theta

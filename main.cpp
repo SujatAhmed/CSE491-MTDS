@@ -20,47 +20,6 @@ void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 5) {
-    cerr << "Usage: " << argv[0]
-         << " <graph_filename> <seed_filename> <predicted_filename> <density_threshold>" << endl;
-    return 1;
-  }
-
-  map<int, vector<int>> adjacencyMap;
-  map<int, vector<int>> subgraphAdjacencyMap;
-  set<set<int>> seedTriangles;
-  set<set<int>> maximalSubgraphs;
-
-
-  string base_dir = "/home/sujat/projects/cse491/graphs/";
-  string file = argv[1];
-  string seedFileName = argv[2];
-  string predictedFileName = argv[3];
-
-  float theta = stod(argv[4]);
-
-  string filePath = base_dir + file;
-  string seedPath = base_dir + seedFileName;
-  string predictedPath = base_dir + predictedFileName;
-
-  adjacencyMap = generateAdjacencyMap(filePath);
-  seedTriangles = readSeedTriangles(seedPath);
-  maximalSubgraphs =
-      generateMaximalSubgraphs(seedTriangles, theta, adjacencyMap);
-  generatePredictedLabels(adjacencyMap, maximalSubgraphs, predictedPath);
-  // printMap(adjacencyMap);
-  return 0;
-}
-
-void printMap(map<int, vector<int>> adjacencyMap) {
-
-  for (const auto &[node, neighbors] : adjacencyMap) {
-    cout << node << ": ";
-    for (int neighbor : neighbors) {
-      cout << neighbor << " ";
-    }
-    cout << endl;
-  }
 }
 
 set<set<int>> readSeedTriangles(const string &filename) {
