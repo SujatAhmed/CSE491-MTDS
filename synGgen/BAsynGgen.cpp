@@ -135,8 +135,66 @@ vector<int> calculateDegrees(int n, const vector<vector<int>>& adj) {
     return degrees;
 }
 
+// Connect the nodes using Barabasi-Albert model (preferential attachment)
+void connectNodes(vector<vector<int>>& adj,
+                  const vector<vector<int>>& subgraphs,
+                  const vector<int>& unused_nodes,
+                  int num_edges_to_add,
+                  int n) {
+
+    vector<int> degrees = calculateDegrees(n, adj);
+    vector<int> all_nodes_available(n);
+    iota(all_nodes_available.begin(), all_nodes_available.end(), 0);
+
+    for (int i = 0; i < num_edges_to_add; ++i) {
+        // Find two distinct nodes to connect
+        int u, v;
+        do {
+            // Select first node `u` based on preferential attachment
+            int total_degree_u = accumulate(degrees.begin(), degrees.end(), 0);
+            uniform_int_distribution<> dis_u(0, total_degree_u - 1);
+            int rand_val_u = dis_u(gen);
+            int current_sum_u = 0;
+            u = -1;
+            for (int k = 0; k < n; ++k) {
+                current_sum_u += degrees[k];
+                if (rand_val_u < current_sum_u) {
+                    u = k;
+                    break;
+                }
+            }
+            if (u == -1) u = all_nodes_available[dis_u(gen) % n]; // fallback
+
+            // Select second node `v` based on preferential attachment
+            int total_degree_v = total_degree_u;
+            uniform_int_distribution<> dis_v(0, total_degree_v - 1);
+            int rand_val_v = dis_v(gen);
+            int current_sum_v = 0;
+            v = -1;
+            for (int k = 0; k < n; ++k) {
+                current_sum_v += degrees[k];
+                if (rand_val_v < current_sum_v) {
+                    v = k;
+                    break;
+                }
+            }
+            if (v == -1) v = all_nodes_available[dis_v(gen) % n]; // fallback
+
+        } while (u == v || adj[u][v] == 1); // Ensure distinct nodes and no existing edge
+
+        // Add the new edge
+        adj[u][v] = 1;
+        adj[v][u] = 1;
+
+        // Update degrees for the new edge
+        degrees[u]++;
+        degrees[v]++;
+    }
+}
+
+
 // Main generator
-vector<vector<int>> generateSyntheticGraph(int n, int t, double th) {
+vector<vector<int>> generateSyntheticGraph(int n, int t, double th, int num_edges_to_add) {
     vector<int> full_node_set(n);
     iota(full_node_set.begin(), full_node_set.end(), 0);
 
@@ -151,7 +209,7 @@ vector<vector<int>> generateSyntheticGraph(int n, int t, double th) {
 
         vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
         makeClique(adj, subset);
-        double tridense = th + ((double)rand() / RAND_MAX) * (1 - th);
+        double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
         removeEdgesToMatchTriangleDensity(adj, subset, tridense);
 
         for (int node : subset) {
@@ -162,6 +220,9 @@ vector<vector<int>> generateSyntheticGraph(int n, int t, double th) {
         triangle_subgraphs.push_back(subset);
     }
     printTriangleDenseSubgraphs(triangle_subgraphs, adj);
+
+    // Call the new BA-model based connectNodes function
+    connectNodes(adj, triangle_subgraphs, available_nodes, num_edges_to_add, n);
 
     return adj;
 }
@@ -192,13 +253,14 @@ void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs, const vec
 int main() {
     int n = 40;        // total nodes
     int t = 3;         // triangle-rich subgraphs
-    double th = 0.5;    // density threshold
+    double th = 0.6;    // density threshold
+    int num_edges_to_add = 100; // Number of edges to add using BA model
 
     string filename;
     cout << "Enter output file name (with .edges extension): ";
     cin >> filename;
 
-    vector<vector<int>> graph = generateSyntheticGraph(n, t, th);
+    vector<vector<int>> graph = generateSyntheticGraph(n, t, th, num_edges_to_add);
 
     ofstream outfile(filename);
     for (int i = 0; i < n; ++i) {
