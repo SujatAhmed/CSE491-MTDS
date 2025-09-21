@@ -1,6 +1,6 @@
 
-#include "include/MTDS.h"
 #include "preProcessing/include/adjacency.h"
+#include "include/simulatedAnnealing.h"
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -19,6 +19,31 @@ void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
                              string predictedFilePath);
 
 int main(int argc, char *argv[]) {
+    if (argc < 1) {
+    cerr << "Usage: " << argv[0]
+         << "<graph_filename>" << endl;
+    return 1;
+  }
+
+  map<int, vector<int>> adjacencyMap;
+  set<int> seed;
+  float threshold = 0.5;
+  map<int, vector<int>> graph;
+  int temperature = 5;
+  float alpha = 0.7;
+
+  seed = {21,45,38};
+
+  string base_dir = "/home/sujat/projects/cse491/graphs/";
+  string file = argv[1];
+  string filePath = base_dir + file;
+
+  graph = generateAdjacencyMap(filePath);
+
+  simulated_annealing_v(seed, threshold, graph, temperature, alpha);
+
+
+
 
 }
 
@@ -46,23 +71,7 @@ set<set<int>> readSeedTriangles(const string &filename) {
   return seedTriangles;
 }
 
-set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
-                                       map<int, vector<int>> adj) {
-  set<set<int>> maximalSubgraphs;
 
-  for (const auto &seed : seedTriangles) {
-    // Make a copy since the function takes a non-const reference
-    set<int> seedCopy = seed;
-    set<int> subgraph =
-        locally_optimal_triangle_dense_subgraph(adj, seedCopy, theta);
-
-    if (!subgraph.empty()) {
-      maximalSubgraphs.insert(subgraph);
-    }
-  }
-
-  return maximalSubgraphs;
-}
 
 void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
                              set<set<int>> maximalSubgraphs,
