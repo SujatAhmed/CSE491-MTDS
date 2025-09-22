@@ -10,6 +10,16 @@
 #include <vector> // for std::vector
 using namespace std;
 
+// ANSI color codes
+const string RESET = "\033[0m";
+const string RED = "\033[31m";
+const string GREEN = "\033[32m";
+const string YELLOW = "\033[33m";
+const string BLUE = "\033[34m";
+const string MAGENTA = "\033[35m";
+const string CYAN = "\033[36m";
+const string BOLD = "\033[1m";
+
 set<int> find_neighbors(set<int> &subgraph, map<int, vector<int>> &graph);
 float objective_function(int triangle_count, int subgraph_size);
 bool should_accept(float delta, int temperature);
@@ -22,7 +32,7 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
                                float alpha) {
 
   set<int> S = seed;
-  int triangle_count = 1;
+  int triangle_count;
   int T_S = 0;
   int T_Sprime = 0;
   float E_S;
@@ -32,18 +42,18 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
   map<int, vector<int>> S_testMap;
   map<int, vector<int>> S_map;
 
-  cout << "Initial seed:";
+  cout << BOLD << YELLOW << "Initial seed:" << RESET;
+
   for (int v : S)
     cout << " " << v;
   cout << endl;
 
-  cout << "Initial temperature: " << temperature << endl;
-  cout << "Alpha (cooling rate): " << alpha << endl;
-  cout << "Threshold: " << threshold << endl;
-
   int iter = 0;
   do {
-    cout << "\nIteration " << iter << " | Temperature: " << temperature << endl;
+
+    cout << BOLD << CYAN << "\nIteration " << iter
+         << " | Temperature: " << temperature << RESET << endl;
+
     neighbors = find_neighbors(S, graph);
     cout << "Candidate neighbors:";
     for (int u : neighbors)
@@ -94,9 +104,12 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
 
   } while (temperature > 0);
 
-  cout << "\nFinal subgraph nodes:";
+  cout << "\n" << BOLD << GREEN << "Final subgraph nodes:" << RESET;
+
   for (int v : S)
-    cout << " " << v;
+    cout << " " << MAGENTA << v << RESET;
+
+  cout << endl;
   cout << endl;
   cout << "Final triangle count: " << triangle_count << endl;
   cout << "Final temperature: " << temperature << endl;
