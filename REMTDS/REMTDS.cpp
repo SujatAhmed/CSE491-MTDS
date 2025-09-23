@@ -56,12 +56,40 @@ bool is_part_of_triangle(unsigned u, unsigned v, const std::unordered_map<unsign
     return false;
 }
 
+// Function to check if a node `u` is part of any triangle
+bool is_node_part_of_triangle(unsigned u, const std::unordered_map<unsigned, std::vector<unsigned>>& adj) {
+    if (!adj.count(u) || adj.at(u).size() < 2) {
+        return false;
+    }
+    const auto& neighbors_u = adj.at(u);
+    for (size_t i = 0; i < neighbors_u.size(); ++i) {
+        for (size_t j = i + 1; j < neighbors_u.size(); ++j) {
+            unsigned v = neighbors_u[i];
+            unsigned w = neighbors_u[j];
+            if (adj.count(v)) {
+                const auto& neighbors_v = adj.at(v);
+                for (unsigned neighbor_of_v : neighbors_v) {
+                    if (neighbor_of_v == w) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 int main(int argc, char* argv[]) {
     // Correct usage message for command-line arguments
     if (argc < 4) {
         std::cerr << "Usage: " << argv[0] << " <edgelist.edges> <theta> <dv>" << std::endl;
         return 1;
     }
+
+    std::string outname;
+    std::cout << "Enter output file names: ";
+    std::cin >> outname;
 
     std::string filename = argv[1];
     double theta = std::stod(argv[2]);
@@ -116,6 +144,25 @@ int main(int argc, char* argv[]) {
         }
     }
 
+        std::unordered_map<unsigned, std::vector<unsigned>> triangle_node_filtered_adj;
+    std::unordered_set<unsigned> nodes_in_tri_net;
+
+    std::cout << "Filtering nodes not part of any triangle..." << std::endl;
+
+    for (unsigned node : all_nodes) {
+        if (is_node_part_of_triangle(node, original_adj)) {
+            nodes_in_tri_net.insert(node);
+        }
+    }
+
+    for (unsigned node : nodes_in_tri_net) {
+        for (unsigned neighbor : original_adj[node]) {
+            if (nodes_in_tri_net.count(neighbor)) {
+                triangle_node_filtered_adj[node].push_back(neighbor);
+            }
+        }
+    }
+
     std::cout << "Nodes after degree filtering: " << retained_nodes.size() << std::endl;
 
     // Step 3: Remove edges that are not part of any triangle
@@ -157,8 +204,9 @@ int main(int argc, char* argv[]) {
     std::cout << "\nFound " << subgraphs.size() << " subgraphs." << std::endl;
     std::cout << "Filtering subgraphs with density >= " << theta << std::endl;
 
-    std::ofstream edges_out("subgraphs.edges");
-    std::ofstream adj_out("subgraphs.adj.txt");
+    std::ofstream edges_out(outname + "_clusters.txt");
+    std::ofstream adj_out(outname + "_clusters.txt", std::ios::app); // keep both in one file
+    std::ofstream idmap_out(outname + "_clusterids.txt");
     int subgraph_id = 0;
 
     for (const auto& subgraph_nodes : subgraphs) {
@@ -218,7 +266,7 @@ int main(int argc, char* argv[]) {
                         if (subgraph_nodes.count(neighbor)) {
                             adj_out << neighbor << " ";
                             if (node < neighbor) {
-                                edges_out << node << " " << neighbor << "\n";
+                                idmap_out << node << " " << subgraph_id << "\n";
                             }
                         }
                     }
@@ -231,6 +279,7 @@ int main(int argc, char* argv[]) {
 
     edges_out.close();
     adj_out.close();
+    idmap_out.close();
 
     return 0;
 }

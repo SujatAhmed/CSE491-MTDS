@@ -194,7 +194,7 @@ void connectNodes(vector<vector<int>>& adj,
 
 
 // Main generator
-vector<vector<int>> generateSyntheticGraph(int n, int t, double th, int num_edges_to_add) {
+vector<vector<int>> generateSyntheticGraph(int n, int t, double th, int num_edges_to_add, string outname) {
     vector<int> full_node_set(n);
     iota(full_node_set.begin(), full_node_set.end(), 0);
 
@@ -221,8 +221,33 @@ vector<vector<int>> generateSyntheticGraph(int n, int t, double th, int num_edge
     }
     printTriangleDenseSubgraphs(triangle_subgraphs, adj);
 
+    
     // Call the new BA-model based connectNodes function
     connectNodes(adj, triangle_subgraphs, available_nodes, num_edges_to_add, n);
+
+    // Mark remaining unused nodes as 0 (or any default subgraph id you prefer)
+    for (int node : available_nodes) {
+        node_to_subgraph[node] = 0; // 0 = not part of any triangle-dense subgraph
+    }
+
+    // Write clusters file
+    ofstream clusterFile(outname + "_clusters.txt");
+    for (size_t i = 0; i < triangle_subgraphs.size(); ++i) {
+        clusterFile << "Subgraph " << i + 1 << ": ";
+        for (size_t j = 0; j < triangle_subgraphs[i].size(); ++j) {
+            clusterFile << triangle_subgraphs[i][j];
+            if (j < triangle_subgraphs[i].size() - 1) clusterFile << " ";
+        }
+        clusterFile << "\n";
+    }
+    clusterFile.close();
+
+    // Write cluster IDs file
+    ofstream idmapFile(outname + "_clusterids.txt");
+    for (int node = 0; node < n; ++node) {
+        idmapFile << node << " " << node_to_subgraph[node] << "\n";
+    }
+    idmapFile.close();
 
     return adj;
 }
@@ -252,22 +277,37 @@ void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs, const vec
 
 int main() {
     int n = 40;        // total nodes
-    int t = 3;         // triangle-rich subgraphs
-    double th = 0.6;    // density threshold
-    int num_edges_to_add = 100; // Number of edges to add using BA model
+    int t = 5;         // triangle-rich subgraphs
+    double th = 0.5;    // density threshold
+    int num_edges_to_add = 30; // Number of edges to add using BA model
 
     string filename;
-    cout << "Enter output file name (with .edges extension): ";
+    cout << "Enter generated graph output file name (with .edges extension): ";
     cin >> filename;
 
-    vector<vector<int>> graph = generateSyntheticGraph(n, t, th, num_edges_to_add);
+    vector<vector<int>> graph = generateSyntheticGraph(n, t, th, num_edges_to_add, filename);
 
-    ofstream outfile(filename);
+    ofstream outfile(filename + ".edges");
     for (int i = 0; i < n; ++i) {
+        bool hasEdge = false;
         for (int j = i + 1; j < n; ++j) {
             if (graph[i][j]) {
                 outfile << i << " " << j << "\n";
             }
+        }
+    }
+
+    // Isolated nodes
+    for (int i = 0; i < n; ++i) {
+        bool hasEdge = false;
+        for (int j = 0; j < n; ++j) {
+            if (graph[i][j]) {
+                hasEdge = true;
+                break;
+            }
+        }
+        if (!hasEdge) {
+            outfile << i << "\n"; // write isolated node as single line
         }
     }
 
