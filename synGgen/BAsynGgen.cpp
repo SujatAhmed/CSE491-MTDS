@@ -54,6 +54,9 @@ float sigmoid(float x) {
     return 1.0f / (1.0f + exp(-x));
 } 
 
+
+// Triangle Density Calculation
+// Number of triangles / Number of nodes
 float triangleDensity(const vector<vector<int>>& adj, const vector<int>& subset) {
     int num_triangles = 0;
     int k = subset.size(); // Number of nodes in the subgraph
@@ -231,7 +234,7 @@ vector<vector<int>> generateSyntheticGraph(int n, int t, double th, int num_edge
     }
 
     // Write clusters file
-    ofstream clusterFile(outname + "_clusters.txt");
+    ofstream clusterFile("TestGraphs/Clusters/" + outname + "_clusters.txt");
     for (size_t i = 0; i < triangle_subgraphs.size(); ++i) {
         clusterFile << "Subgraph " << i + 1 << ": ";
         for (size_t j = 0; j < triangle_subgraphs[i].size(); ++j) {
@@ -243,7 +246,7 @@ vector<vector<int>> generateSyntheticGraph(int n, int t, double th, int num_edge
     clusterFile.close();
 
     // Write cluster IDs file
-    ofstream idmapFile(outname + "_clusterids.txt");
+    ofstream idmapFile("TestGraphs/GroundTruths/" + outname + "_ground_truth.txt");
     for (int node = 0; node < n; ++node) {
         idmapFile << node << " " << node_to_subgraph[node] << "\n";
     }
@@ -275,19 +278,25 @@ void printTriangleDenseSubgraphs(const vector<vector<int>>& subgraphs, const vec
     cout << "----------------------------------------------------" << endl;
 }
 
-int main() {
-    int n = 40;        // total nodes
-    int t = 5;         // triangle-rich subgraphs
-    double th = 0.5;    // density threshold
-    int num_edges_to_add = 30; // Number of edges to add using BA model
+int main(int argc, char* argv[]) {
+    if (argc < 5) {
+        cerr << "Usage: " << argv[0] << " <n> <t> <th> <cons>" << endl;
+        return 1;
+    }
+    
+    int n = stoi(argv[1]);         // total nodes
+    int t = stoi(argv[2]);         // triangle-rich subgraphs
+    double th = stod(argv[3]);     // density threshold
+    int num_edges_to_add = stoi(argv[4]); // Number of edges to add using BA model
+
 
     string filename;
-    cout << "Enter generated graph output file name (with .edges extension): ";
+    cout << "Enter generated graph output file name: ";
     cin >> filename;
 
     vector<vector<int>> graph = generateSyntheticGraph(n, t, th, num_edges_to_add, filename);
 
-    ofstream outfile(filename + ".edges");
+    ofstream outfile("TestGraphs/Graphs/" + filename + ".edges");
     for (int i = 0; i < n; ++i) {
         bool hasEdge = false;
         for (int j = i + 1; j < n; ++j) {
@@ -313,7 +322,7 @@ int main() {
 
     outfile.close();
 
-    cout << "Graph saved to " << filename << endl;
+    cout << "Graph saved to " << "TestGraphs/Graphs/" + filename + ".edges" << endl;
 
     return 0;
 }
