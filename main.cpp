@@ -21,13 +21,9 @@ const string MAGENTA = "\033[35m";
 const string CYAN = "\033[36m";
 const string BOLD = "\033[1m";
 
-void printMap(map<int, vector<int>> adjacencyMap);
 set<set<int>> read_seed_file(const string &filename);
 set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
                                        map<int, vector<int>> adj);
-void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
-                             set<set<int>> maximalSubgraphs,
-                             string predictedFilePath);
 
 int main(int argc, char *argv[]) {
 
@@ -128,38 +124,4 @@ set<set<int>> read_seed_file(const string &filename) {
     }
   }
   return all_seeds;
-}
-
-void generatePredictedLabels(map<int, vector<int>> adjacencyMap,
-                             set<set<int>> maximalSubgraphs,
-                             string predictedFilePath) {
-  // Step 1: Initialize all nodes with label -1
-  map<int, int> labels;
-  for (const auto &[node, _] : adjacencyMap) {
-    labels[node] = -1;
-  }
-
-  // Step 2: Assign cluster IDs to nodes in subgraphs
-  int clusterId = 1;
-  for (const auto &subgraph : maximalSubgraphs) {
-    for (int node : subgraph) {
-      labels[node] = clusterId;
-    }
-    clusterId++;
-  }
-
-  // Step 3: Write labels to file
-  ofstream outfile(predictedFilePath);
-  if (!outfile.is_open()) {
-    cerr << "Error opening file: " << predictedFilePath << endl;
-    return;
-  }
-
-  for (const auto &[node, label] : labels) {
-    outfile << node << " " << label << "\n";
-  }
-
-  outfile.close();
-
-  cout << "Predicted labels written to " << predictedFilePath << endl;
 }

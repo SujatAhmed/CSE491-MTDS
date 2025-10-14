@@ -80,13 +80,14 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
       cout << " Current: Triangles = " << T_S << " | Objective = " << E_S
            << endl;
 
-      if (E_Sprime >= E_S) {
+      if (E_Sprime >= E_S && E_Sprime >= threshold) {
         cout << "Accepted (improvement or equal)" << endl;
         S.insert(u);
         triangle_count = T_Sprime;
       } else {
+        float density_diff = abs(threshold - E_Sprime);
         float delta = E_Sprime - E_S;
-        float prob = exp(delta / temperature);
+        float prob = exp((delta * density_diff) / temperature);
         cout << "Not improved. Delta = " << delta
              << ", Acceptance probability = " << prob << endl;
         if (should_accept(delta, temperature)) {
