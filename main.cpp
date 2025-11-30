@@ -83,9 +83,10 @@ int main(int argc, char *argv[]) {
   map<int, vector<int>> graph;
   vector<SeedMetrics> seeds;
   set<set<int>> maximal_subgraphs;
+  float k = 0.00001;
 
   graph = generateAdjacencyMap(filePath);
-  seeds = read_seeds_with_density(seed_path, graph, density, 0.0001f);
+  seeds = read_seeds_with_density(seed_path, graph, density, k);
 
   cout << "seed path " << seed_path << endl;
 

@@ -17,5 +17,8 @@ std::vector<SeedMetrics> read_seeds_with_density(
     const std::map<int, std::vector<int>> &graph,
     float theta,
     float k);
+std :: vector<SeedMetrics> read_seeds_with_density(const std :: string &filename,
+                                            const std :: map<int, std :: vector<int>> &graph,
+                                            float theta, float k);
 
 #endif // SEED_PROCESSING_H
