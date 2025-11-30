@@ -1,0 +1,5 @@
+Subgraph 1: 29 37 8 34
+Subgraph 2: 36 0 32
+Subgraph 3: 33 39 59 13 19 17 44 2
+Subgraph 4: 15 48 50 9
+Subgraph 5: 31 23 57 25 7 49 12 11 55

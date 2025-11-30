@@ -78,13 +78,15 @@ int main(int argc, char *argv[]) {
 
   cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
 
-  string base_dir = "/home/sujat/projects/cse491/graphs/";
+  string base_dir = "/home/sujat/projects/cse491/TestGraphs/Graphs/";
   string filePath = base_dir + graph_filename;
   string seed_path = base_dir + "seeds/" + seed_filename;
 
   map<int, vector<int>> adjacencyMap;
   map<int, vector<int>> graph;
   set<set<int>> seeds;
+  set<set<int>> maximal_subgraphs;
+  
 
   seeds = read_seed_file(seed_path);
   graph = generateAdjacencyMap(filePath);
@@ -93,7 +95,9 @@ int main(int argc, char *argv[]) {
 
   for (const auto &seed_set : seeds) {
     auto mutable_seed = seed_set;
-    simulated_annealing_v(mutable_seed, density, graph, temperature, alpha);
+    set<int> s_maximal_sg;
+    s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha);
+    maximal_subgraphs.insert(s_maximal_sg);
   }
 
   // for (const auto &seed_set : seeds) {
