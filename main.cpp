@@ -22,8 +22,6 @@ const string MAGENTA = "\033[35m";
 const string CYAN = "\033[36m";
 const string BOLD = "\033[1m";
 
-set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
-                                       map<int, vector<int>> adj);
 
 int main(int argc, char *argv[]) {
 
