@@ -1,7 +1,7 @@
 #include "../include/simulatedAnnealing.h"
-#include "../include/incrementalTriangleCount.h"
 #include "../include/subgraphAdjacency.h"
 #include "../include/triangleEnumeration.h"
+#include "../include/norm.h"
 #include <cmath> // for exp()
 #include <cstdlib>
 #include <iostream>
@@ -26,6 +26,8 @@ bool should_accept(float delta, int temperature);
 float sigmoid1(float x);
 
 using namespace std;
+
+float k = 0.0001;
 
 set<int> simulated_annealing_v(set<int> &seed, float threshold,
                                map<int, vector<int>> &graph, int temperature,
@@ -71,8 +73,10 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
       T_Sprime = bruteForceTriangleCounting(S_testMap);
       T_S = bruteForceTriangleCounting(S_map);
 
-      E_S = objective_function(T_S, S.size());
-      E_Sprime = objective_function(T_Sprime, S.size() + 1);
+      // E_S = objective_function(T_S, S.size());
+      E_S = norm(T_S, S.size(), k);
+      // E_Sprime = objective_function(T_Sprime, S.size() + 1);
+      E_Sprime = norm(T_Sprime, (S.size() + 1), k);
 
       cout << "Trying node " << u << ":";
       cout << " Triangles if added = " << T_Sprime

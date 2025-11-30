@@ -1,20 +1,11 @@
-# ninja log v6
-4	1380	1757867746358996675	CMakeFiles/MTDS.dir/src/clusterOneVersion.cpp.o	e9c5e62e9c521379
-13	747	1760457751742072285	/home/sujat/projects/cse491/build/cmake_install.cmake	6cb3f84312e5b0e3
-5	1179	1757867746359551610	CMakeFiles/MTDS.dir/src/subgraphAdjacency.cpp.o	14fdaa2329bd147c
-5	660	1757867746359069120	CMakeFiles/MTDS.dir/src/incrementalTriangleCount.cpp.o	97c731f57a8efd8c
-5	1116	1757867746359708126	CMakeFiles/MTDS.dir/src/triangleDensity.cpp.o	a695fcce8cf833b6
-13	934	1758545794452002388	CMakeFiles/MTDS.dir/src/simulatedAnnealing.cpp.o	5dc79089afb38590
-2	643	1754555778450287454	CMakeFiles/MTDS.dir/src/MTDS.cpp.o	5618d6084417e18b
-8	816	1758547240618949208	CMakeFiles/MTDS.dir/main.cpp.o	8c124dc65d27febf
-13	747	1760457751743072290	build.ninja	6cb3f84312e5b0e3
-4	1024	1757867746358802614	CMakeFiles/MTDS.dir/preProcessing/src/adjacency.cpp.o	c7df6186b975b003
-5	942	1757867746360052767	CMakeFiles/MTDS.dir/src/triangleEnumeration.cpp.o	99bc1a3b72fe7398
-816	901	1758547241425949908	MTDS	724cff5ecb3c868
-17	836	1760457751743072290	build.ninja	6cb3f84312e5b0e3
-17	836	1760457751743072290	/home/sujat/projects/cse491/build/cmake_install.cmake	6cb3f84312e5b0e3
-4	742	1760457751755072360	CMakeFiles/MTDS.dir/src/simulatedAnnealing.cpp.o	5dc79089afb38590
-3	819	1760457751754072354	CMakeFiles/MTDS.dir/main.cpp.o	8c124dc65d27febf
-819	906	1760457752570077081	MTDS	724cff5ecb3c868
-10	920	1760459683632613653	CMakeFiles/MTDS.dir/main.cpp.o	8c124dc65d27febf
-920	1014	1760459684542618505	MTDS	724cff5ecb3c868
+# ninja log v7
+13	812	1764522598103478997	CMakeFiles/MTDS.dir/src/incrementalTriangleCount.cpp.o	1dbd9cdc8742451a
+16	1035	1764522598106133268	CMakeFiles/MTDS.dir/src/triangleEnumeration.cpp.o	7adba5cf5d035ca8
+14	1186	1764522598104520486	CMakeFiles/MTDS.dir/src/subgraphAdjacency.cpp.o	d9cbf8b15b481c93
+12	1195	1764522598102546558	CMakeFiles/MTDS.dir/preProcessing/src/adjacency.cpp.o	12d9250ef2acd037
+15	1256	1764522598105301513	CMakeFiles/MTDS.dir/src/triangleDensity.cpp.o	61b487ba29a59fb1
+13	1449	1764522598103002750	CMakeFiles/MTDS.dir/src/clusterOneVersion.cpp.o	c36a859a1b6d03d7
+13	1450	1764522598103955250	CMakeFiles/MTDS.dir/src/simulatedAnnealing.cpp.o	bc0b108a1bc0466f
+12	1523	1764522598101041646	CMakeFiles/MTDS.dir/main.cpp.o	3952cb4877993079
+5	672	1764522724251012179	CMakeFiles/MTDS.dir/src/simulatedAnnealing.cpp.o	bc0b108a1bc0466f
+3	687	1764522933590503895	CMakeFiles/MTDS.dir/src/simulatedAnnealing.cpp.o	bc0b108a1bc0466f
