@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
   cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
 
-  string base_dir = "/home/sujat/projects/cse491/graphs/";
+  string base_dir = "/home/alek/CSE491-MTDS/graphs/";
   string filePath = base_dir + graph_filename;
   string seed_path = base_dir + "seeds/" + seed_filename;
 

@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include "../include/triDense.h"
 
 using namespace std;
 
@@ -48,9 +49,6 @@ void makeClique(vector<vector<int>> &adj, const vector<int> &subset_nodes) {
     }
   }
 }
-
-// Sigmoid Function
-float sigmoid(float x) { return 1.0f / (1.0f + exp(-x)); }
 
 float triangleDensity(const vector<vector<int>> &adj,
                       const vector<int> &subset) {
