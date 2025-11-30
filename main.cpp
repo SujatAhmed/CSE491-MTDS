@@ -1,4 +1,5 @@
 
+#include "include/seedProcessing.h"
 #include "include/simulatedAnnealing.h"
 #include "preProcessing/include/adjacency.h"
 #include <cstdlib>
@@ -11,6 +12,19 @@
 #include <vector>
 using namespace std;
 
+struct ProgramOptions {
+  string graph_filename;
+  string seed_filename;
+  float density;
+  int temperature;
+  float alpha;
+};
+
+struct DataPaths {
+  string graph_path;
+  string seed_path;
+};
+
 // ANSI color codes
 const string RESET = "\033[0m";
 const string RED = "\033[31m";
@@ -21,22 +35,38 @@ const string MAGENTA = "\033[35m";
 const string CYAN = "\033[36m";
 const string BOLD = "\033[1m";
 
-set<set<int>> read_seed_file(const string &filename);
-set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
-                                       map<int, vector<int>> adj);
+ProgramOptions parseProgramOptions(int argc, char *argv[]);
+DataPaths buildDataPaths(const ProgramOptions &options);
+void printProgramOptions(const ProgramOptions &options);
+set<set<int>> processSeeds(const vector<SeedMetrics> &seeds, const map<int, vector<int>> &graph,
+                           const ProgramOptions &options);
 
 int main(int argc, char *argv[]) {
-
   if (argc < 6) {
     cerr << "Usage: " << argv[0]
-         << " graph=<graph_filename> seed=<seed_filename>"
-         << " density=<float> temperature=<int> alpha=<float>" << endl;
+         << " graph=<graph_filename> seed=<seed_filename> density=<float>"
+         << " temperature=<int> alpha=<float>" << endl;
     return 1;
   }
 
+  ProgramOptions options = parseProgramOptions(argc, argv);
+  DataPaths paths = buildDataPaths(options);
+
+  printProgramOptions(options);
+  cout << "Seed path: " << paths.seed_path << endl;
+
+  map<int, vector<int>> graph = generateAdjacencyMap(paths.graph_path);
+  vector<SeedMetrics> seeds = read_seeds_with_density(paths.seed_path, graph, options.density, 0.0001f);
+
+  set<set<int>> maximal_subgraphs = processSeeds(seeds, graph, options);
+  (void)maximal_subgraphs;
+
+  return 0;
+}
+
+ProgramOptions parseProgramOptions(int argc, char *argv[]) {
   map<string, string> args;
 
-  // Parse arguments as key=value
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     size_t pos = arg.find('=');
@@ -47,85 +77,61 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Validate required arguments
   string required[] = {"graph", "seed", "density", "temperature", "alpha"};
   for (auto &key : required) {
     if (args.find(key) == args.end()) {
       cerr << "Error: missing required argument '" << key << "'" << endl;
-      return 1;
+      exit(1);
     }
   }
 
-  // Extract arguments with correct types
-  string graph_filename = args["graph"];
-  string seed_filename = args["seed"];
-  float density = stof(args["density"]);
-  int temperature = stoi(args["temperature"]);
-  float alpha = stof(args["alpha"]);
+  ProgramOptions options{};
+  options.graph_filename = args["graph"];
+  options.seed_filename = args["seed"];
+  options.density = stof(args["density"]);
+  options.temperature = stoi(args["temperature"]);
+  options.alpha = stof(args["alpha"]);
 
-  // Example output
-  cout << BOLD << GREEN << "Graph filename: " << RESET << BLUE << graph_filename
-       << RESET << endl;
-
-  cout << BOLD << GREEN << "Seed filename: " << RESET << BLUE << seed_filename
-       << RESET << endl;
-
-  cout << BOLD << GREEN << "Density: " << RESET << YELLOW << density << RESET
-       << endl;
-
-  cout << BOLD << GREEN << "Temperature: " << RESET << MAGENTA << temperature
-       << RESET << endl;
-
-  cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
-
-  string base_dir = "/home/sujat/projects/cse491/TestGraphs/Graphs/";
-  string filePath = base_dir + graph_filename;
-  string seed_path = base_dir + "seeds/" + seed_filename;
-
-  map<int, vector<int>> adjacencyMap;
-  map<int, vector<int>> graph;
-  set<set<int>> seeds;
-  set<set<int>> maximal_subgraphs;
-  
-
-  seeds = read_seed_file(seed_path);
-  graph = generateAdjacencyMap(filePath);
-
-  cout << "seed path " << seed_path << endl;
-
-  for (const auto &seed_set : seeds) {
-    auto mutable_seed = seed_set;
-    set<int> s_maximal_sg;
-    s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha);
-    maximal_subgraphs.insert(s_maximal_sg);
-  }
-
-  // for (const auto &seed_set : seeds) {
-  //   for (int node : seed_set) {
-  //     cout << node << " ";
-  //   }
-  //   cout << endl;
-  // }
+  return options;
 }
 
-set<set<int>> read_seed_file(const string &filename) {
-  set<set<int>> all_seeds;
-  ifstream fin(filename);
-  if (!fin.is_open()) {
-    cerr << "Failed to open seed file: " << filename << endl;
-    return all_seeds;
-  }
-  string line;
-  while (getline(fin, line)) {
-    istringstream iss(line);
-    set<int> seed_set;
-    int node;
-    while (iss >> node) {
-      seed_set.insert(node);
+DataPaths buildDataPaths(const ProgramOptions &options) {
+  const string base_dir = "/home/sujat/projects/cse491/TestGraphs/Graphs/";
+  DataPaths paths{};
+  paths.graph_path = base_dir + options.graph_filename;
+  paths.seed_path = base_dir + "seeds/" + options.seed_filename;
+  return paths;
+}
+
+void printProgramOptions(const ProgramOptions &options) {
+  cout << BOLD << GREEN << "Graph filename: " << RESET << BLUE << options.graph_filename
+       << RESET << endl;
+  cout << BOLD << GREEN << "Seed filename: " << RESET << BLUE << options.seed_filename
+       << RESET << endl;
+  cout << BOLD << GREEN << "Density: " << RESET << YELLOW << options.density << RESET
+       << endl;
+  cout << BOLD << GREEN << "Temperature: " << RESET << MAGENTA << options.temperature << RESET
+       << endl;
+  cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << options.alpha << RESET << endl;
+}
+
+set<set<int>> processSeeds(const vector<SeedMetrics> &seeds, const map<int, vector<int>> &graph,
+                           const ProgramOptions &options) {
+  set<set<int>> maximal_subgraphs;
+
+  for (const auto &seed_set : seeds) {
+    cout << "Seed:";
+    for (int node : seed_set.nodes) {
+      cout << " " << node;
     }
-    if (!seed_set.empty()) {
-      all_seeds.insert(seed_set);
-    }
+    cout << " | Triangles: " << seed_set.triangle_count << " | Density: " << seed_set.density
+         << endl;
+
+    auto mutable_seed = seed_set.nodes;
+    set<int> maximal = simulated_annealing_v(mutable_seed, options.density, graph,
+                                             options.temperature, options.alpha);
+    maximal_subgraphs.insert(maximal);
   }
-  return all_seeds;
+
+  return maximal_subgraphs;
 }
