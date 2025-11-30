@@ -6,10 +6,10 @@
 
 using  namespace std;
 
-float triangleDensity(
+float norm(
         int triDense,
         int num_nodes,
-        int k
+        float k
 );
 
 float hOFx (int k, int x, int M);
