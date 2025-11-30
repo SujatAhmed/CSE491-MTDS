@@ -35,11 +35,8 @@ const string MAGENTA = "\033[35m";
 const string CYAN = "\033[36m";
 const string BOLD = "\033[1m";
 
-ProgramOptions parseProgramOptions(int argc, char *argv[]);
-DataPaths buildDataPaths(const ProgramOptions &options);
-void printProgramOptions(const ProgramOptions &options);
-set<set<int>> processSeeds(const vector<SeedMetrics> &seeds, const map<int, vector<int>> &graph,
-                           const ProgramOptions &options);
+set<set<int>> generateMaximalSubgraphs(set<set<int>> seedTriangles, float theta,
+                                       map<int, vector<int>> adj);
 
 int main(int argc, char *argv[]) {
   if (argc < 6) {
@@ -115,23 +112,39 @@ void printProgramOptions(const ProgramOptions &options) {
   cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << options.alpha << RESET << endl;
 }
 
-set<set<int>> processSeeds(const vector<SeedMetrics> &seeds, const map<int, vector<int>> &graph,
-                           const ProgramOptions &options) {
+  cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
+
+  string base_dir = "/home/sujat/projects/cse491/TestGraphs/Graphs/";
+  string filePath = base_dir + graph_filename;
+  string seed_path = base_dir + "seeds/" + seed_filename;
+
+  map<int, vector<int>> graph;
+  vector<SeedMetrics> seeds;
   set<set<int>> maximal_subgraphs;
+
+  graph = generateAdjacencyMap(filePath);
+  seeds = read_seeds_with_density(seed_path, graph, density, 0.0001f);
+
+  cout << "seed path " << seed_path << endl;
 
   for (const auto &seed_set : seeds) {
     cout << "Seed:";
     for (int node : seed_set.nodes) {
       cout << " " << node;
     }
-    cout << " | Triangles: " << seed_set.triangle_count << " | Density: " << seed_set.density
-         << endl;
+    cout << " | Triangles: " << seed_set.triangle_count
+         << " | Density: " << seed_set.density << endl;
 
     auto mutable_seed = seed_set.nodes;
-    set<int> maximal = simulated_annealing_v(mutable_seed, options.density, graph,
-                                             options.temperature, options.alpha);
-    maximal_subgraphs.insert(maximal);
+    set<int> s_maximal_sg;
+    s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha);
+    maximal_subgraphs.insert(s_maximal_sg);
   }
 
-  return maximal_subgraphs;
+  // for (const auto &seed_set : seeds) {
+  //   for (int node : seed_set) {
+  //     cout << node << " ";
+  //   }
+  //   cout << endl;
+  // }
 }
