@@ -1,4 +1,3 @@
-
 #include "include/seedProcessing.h"
 #include "include/simulatedAnnealing.h"
 #include "preProcessing/include/adjacency.h"
@@ -22,6 +21,43 @@ const string MAGENTA = "\033[35m";
 const string CYAN = "\033[36m";
 const string BOLD = "\033[1m";
 
+void generatePredictedLabels(const map<int, vector<int>>& adjacencyMap,
+                             const set<set<int>>& maximalSubgraphs,
+                             const string& predictedFilePath) {
+  // Step 1: Initialize all nodes with label -1
+  map<int, int> labels;
+  for (const auto &[node, _] : adjacencyMap) {
+    labels[node] = -1;
+  }
+
+  // Step 2: Assign cluster IDs to nodes in subgraphs
+  // Cluster IDs start at 1.
+  int clusterId = 1;
+  for (const auto &subgraph : maximalSubgraphs) {
+    for (int node : subgraph) {
+      // Note: If a node appears in multiple maximal subgraphs, it will be 
+      // labeled with the ID of the last subgraph it appears in.
+      labels[node] = clusterId;
+    }
+    clusterId++;
+  }
+
+  // Step 3: Write labels to file
+  ofstream outfile(predictedFilePath);
+  if (!outfile.is_open()) {
+    cerr << "Error opening file: " << predictedFilePath << endl;
+    return;
+  }
+
+  // Write node IDs and their assigned labels
+  for (const auto &[node, label] : labels) {
+    outfile << node << " " << label << "\n";
+  }
+
+  outfile.close();
+
+  cout << "Predicted labels successfully written to " << predictedFilePath << endl;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -76,7 +112,7 @@ int main(int argc, char *argv[]) {
 
   cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
 
-  string base_dir = "/home/sujat/projects/cse491/TestGraphs/Graphs/";
+  string base_dir = "../TestGraphs/Graphs/";
   string filePath = base_dir + graph_filename;
   string seed_path = base_dir + "seeds/" + seed_filename;
 
@@ -88,7 +124,23 @@ int main(int argc, char *argv[]) {
   graph = generateAdjacencyMap(filePath);
   seeds = read_seeds_with_density(seed_path, graph, density, k);
 
-  cout << "seed path " << seed_path << endl;
+  cout << "Seed path --> " << seed_path << endl;
+
+  //Test Start
+  cout << "\n--- DEBUG: Seeds Loaded ---" << endl;
+  cout << "Total seeds = " << seeds.size() << endl;
+
+  for (size_t i = 0; i < seeds.size(); i++) {
+      const auto& s = seeds[i];
+
+      cout << "Seed " << i + 1 << ": { ";
+      for (int n : s.nodes) cout << n << " ";
+      cout << "}";
+
+      cout << " | Triangles: " << s.triangle_count
+          << " | Density: " << s.density << endl;
+  }
+  // Test End
 
   for (const auto &seed_set : seeds) {
     cout << "Seed:";
@@ -103,5 +155,34 @@ int main(int argc, char *argv[]) {
     s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha);
     maximal_subgraphs.insert(s_maximal_sg);
   }
+
+  cout << "\n" << BOLD << YELLOW << "--- Maximal Subgraphs ---" 
+     << RESET << endl;
+
+  int cid = 1;
+  for (const auto& sg : maximal_subgraphs) {
+      cout << "Cluster " << cid << ":z { ";
+
+      for (int n : sg) cout << n << " ";
+      cout << "}";
+      cid++;
+  }
+
+  // Generate and Write Predicted Labels ---
+  cout << BOLD << GREEN << "--- Label Generation Phase ---" << RESET << endl;
+
+  // Construct a descriptive output filename
+  string output_basename = graph_filename;
+  // Remove file extension if present (e.g., '.txt', '.gml')
+  size_t lastdot = output_basename.find_last_of(".");
+  if (lastdot != string::npos) {
+    output_basename = output_basename.substr(0, lastdot);
+  }
+  
+  string predictedFilePath = "../TestGraphs/Graphs/PredictedLabels/" + output_basename + "_predicted_labels.txt";
+
+  generatePredictedLabels(graph, maximal_subgraphs, predictedFilePath);
+
+  return 0;
 
 }

@@ -9,7 +9,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include "../include/triDense.h"
+#include "../include/norm.h"
 
 using namespace std;
 
@@ -77,14 +77,9 @@ float triangleDensity(const vector<vector<int>> &adj,
       }
     }
   }
+  
+  return norm(num_triangles, k, 0.01);
 
-  float rawDensity = static_cast<float>(num_triangles) / k;
-  // cout << "Triangles: " << num_triangles
-  //  << ", Nodes: " << k
-  //  << ", Raw: " << rawDensity
-  //  << ", Tuned: " << sigmoid(rawDensity) << endl;
-
-  return sigmoid(rawDensity);
 }
 
 // Remove edges from clique to get to desired threshold
@@ -210,6 +205,9 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 
   for (int i = 1; i <= t; ++i) {
     int s = (n / t) - 1;
+//     uniform_int_distribution<> size_dist(3, s);
+//     int subgraph_size = size_dist(gen);
+    // Trying RD
     int subgraph_size = (rand() % (s - 3 + 1)) + 3;
     // cout << "i:" << i << "\n";
 
@@ -218,6 +216,9 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
     float current_density = triangleDensity(adj, subset);
     // cout << "\n\nafter forming cl: " << current_density << "\n\n";
 
+    // uniform_real_distribution<> density_dist(th, 0.8);
+    // double tridense = density_dist(gen);
+    // Trying RD
     double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
 
     removeEdgesToMatchTriangleDensity(adj, subset, tridense);
@@ -298,14 +299,10 @@ extractOneTriangleFromEachSubgraph(const vector<vector<int>> &subgraphs,
 }
 
 int main(int argc, char *argv[]) {
-   double prob_between = 0.01;
-  double prob_external = 0.05;
-  double prob_amongNonSub = 0.05;
-  int max_edges_between_subgraphs = 2;
 
   if (argc < 7) {
     cerr << "Usage: " << argv[0]
-         << " <output_filename.edges> <ground_truth_filename.labels> "
+         << " <output_filename.txt> <ground_truth_filename.labels> "
             "<seed_filename.txt> <n> <t> <th>"
          << endl;
     return 1;
@@ -314,15 +311,20 @@ int main(int argc, char *argv[]) {
   string label_filename = argv[2];
   string seed_filename = argv[3];
 
-   int n = stoi(argv[4]);       // total nodes
+  int n = stoi(argv[4]);       // total nodes
   int t = stoi(argv[5]);       // triangle-rich subgraphs
   double th = stod(argv[6]);   // density threshold
 
-  string base_dir = "/home/sujat/projects/cse491/graphs/";
+  string base_dir = "/home/alek/CSE491-MTDS/TestGraphs/Graphs/";
 
   string filePath = base_dir + filename;
-  string labelPath = base_dir + label_filename;
-  string seedPath = base_dir + seed_filename;
+  string labelPath = base_dir + "groundTruths/" + label_filename;
+  string seedPath = base_dir + "seeds/" + seed_filename;
+
+  double prob_between      = (1.0 - th) / (n / double(t));
+  double prob_external     = (1.0 - th) * 0.05;
+  double prob_amongNonSub  = 0.02;
+  int max_edges_between_subgraphs = max(1, int((1.0 - th) * 5));
 
   vector<vector<int>> triangle_subgraph;
 

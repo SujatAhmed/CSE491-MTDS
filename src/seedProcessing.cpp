@@ -33,7 +33,7 @@ vector<SeedMetrics> read_seeds_with_density(const string &filename,
   }
 
   string raw_seed;
-  while (getline(fin, raw_seed, ',')) {
+  while (getline(fin, raw_seed)) {
     string seed_text = trim(raw_seed);
     if (seed_text.empty()) {
       continue;
