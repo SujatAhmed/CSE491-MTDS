@@ -243,7 +243,7 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 
 void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
                                  const vector<vector<int>> &adj) {
-  cout << "\n--- Generated Triangle-Dense Subgraphs and Densities ---" << endl;
+  // cout << "\n--- Generated Triangle-Dense Subgraphs and Densities ---" << endl;
   if (subgraphs.empty()) {
     cout << "No triangle-dense subgraphs were generated." << endl;
     return;
@@ -315,11 +315,14 @@ int main(int argc, char *argv[]) {
   int t = stoi(argv[5]);       // triangle-rich subgraphs
   double th = stod(argv[6]);   // density threshold
 
-  string base_dir = "/home/alek/CSE491-MTDS/TestGraphs/Graphs/";
+  // string base_dir = "TestGraphs/Graphs/";
+  // string filePath = base_dir + filename;
+  // string labelPath = base_dir + "groundTruths/" + label_filename;
+  // string seedPath = base_dir + "seeds/" + seed_filename;
 
-  string filePath = base_dir + filename;
-  string labelPath = base_dir + "groundTruths/" + label_filename;
-  string seedPath = base_dir + "seeds/" + seed_filename;
+  string filePath = filename;
+  string labelPath = label_filename;
+  string seedPath = seed_filename;
 
   double prob_between      = (1.0 - th) / (n / double(t));
   double prob_external     = (1.0 - th) * 0.05;
@@ -347,7 +350,7 @@ int main(int argc, char *argv[]) {
   }
   outfile.close();
 
-  cout << "Graph saved to " << filename << endl;
+  // cout << "Graph saved to " << filename << endl;
 
   ofstream label_file(labelPath);
   for (int i = 0; i < labels.size(); ++i) {
@@ -369,7 +372,7 @@ int main(int argc, char *argv[]) {
       label_file << labels[i] << "\n";
   }
   label_file.close();
-  cout << "Cluster labels saved to " << label_filename << endl;
+  // cout << "Cluster labels saved to " << label_filename << endl;
 
   vector<vector<int>> seedTriangles =
       extractOneTriangleFromEachSubgraph(triangle_subgraph, graph);
@@ -385,7 +388,7 @@ int main(int argc, char *argv[]) {
   }
   seed_file.close();
 
-  cout << "Seed triangles saved to " << seed_filename << endl;
+  // cout << "Seed triangles saved to " << seed_filename << endl;
 
   return 0;
 }

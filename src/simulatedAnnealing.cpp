@@ -44,23 +44,23 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
   map<int, vector<int>> S_testMap;
   map<int, vector<int>> S_map;
 
-  cout << BOLD << YELLOW << "Initial seed:" << RESET;
+  // cout << BOLD << YELLOW << "Initial seed:" << RESET;
 
-  for (int v : S)
-    cout << " " << v;
-  cout << endl;
+  // for (int v : S)
+  //   cout << " " << v;
+  // cout << endl;
 
   int iter = 0;
   do {
 
-    cout << BOLD << CYAN << "\nIteration " << iter
-         << " | Temperature: " << temperature << RESET << endl;
+    // cout << BOLD << CYAN << "\nIteration " << iter
+    //      << " | Temperature: " << temperature << RESET << endl;
 
     neighbors = find_neighbors(S, graph);
-    cout << "Candidate neighbors:";
-    for (int u : neighbors)
-      cout << " " << u;
-    cout << endl;
+    // cout << "Candidate neighbors:";
+    // for (int u : neighbors)
+    //   cout << " " << u;
+    // cout << endl;
 
     for (int u : neighbors) {
 
@@ -78,28 +78,28 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
       // E_Sprime = objective_function(T_Sprime, S.size() + 1);
       E_Sprime = norm(T_Sprime, (S.size() + 1), k);
 
-      cout << "Trying node " << u << ":";
-      cout << " Triangles if added = " << T_Sprime
-           << " | Objective = " << E_Sprime << endl;
-      cout << " Current: Triangles = " << T_S << " | Objective = " << E_S
-           << endl;
+      // cout << "Trying node " << u << ":";
+      // cout << " Triangles if added = " << T_Sprime
+      //      << " | Objective = " << E_Sprime << endl;
+      // cout << " Current: Triangles = " << T_S << " | Objective = " << E_S
+      //      << endl;
 
       if (E_Sprime >= E_S && E_Sprime >= threshold) {
-        cout << "Accepted (improvement or equal)" << endl;
+        // cout << "Accepted (improvement or equal)" << endl;
         S.insert(u);
         triangle_count = T_Sprime;
       } else {
         float density_diff = abs(threshold - E_Sprime);
         float delta = E_Sprime - E_S;
         float prob = exp((delta * density_diff) / temperature);
-        cout << "Not improved. Delta = " << delta
-             << ", Acceptance probability = " << prob << endl;
+        // cout << "Not improved. Delta = " << delta
+        //      << ", Acceptance probability = " << prob << endl;
         if (should_accept(delta, temperature)) {
-          cout << "Accepted (probabilistic)" << endl;
+          // cout << "Accepted (probabilistic)" << endl;
           S.insert(u);
           triangle_count = T_Sprime;
         } else {
-          cout << "Rejected." << endl;
+          // cout << "Rejected." << endl;
           triangle_count = T_S;
         }
       }
@@ -109,18 +109,19 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
 
   } while (temperature > 0);
 
-  cout << "\n" << BOLD << GREEN << "Final subgraph nodes:" << RESET;
+  // cout << "\n" << BOLD << GREEN << "Final subgraph nodes:" << RESET;
 
-  for (int v : S)
-    cout << " " << MAGENTA << v << RESET;
+  // for (int v : S)
+  //   cout << " " << MAGENTA << v << RESET;
 
-  cout << endl;
-  cout << endl;
-  cout << "Final triangle count: " << triangle_count << endl;
-  cout << "Final temperature: " << temperature << endl;
+  // cout << endl;
+  // cout << endl;
+  // cout << "Final triangle count: " << triangle_count << endl;
+  // cout << "Final temperature: " << temperature << endl;
 
   return S;
 }
+
 
 set<int> find_neighbors(set<int> &subgraph, map<int, vector<int>> &graph) {
 

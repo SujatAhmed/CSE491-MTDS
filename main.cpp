@@ -56,7 +56,7 @@ void generatePredictedLabels(const map<int, vector<int>>& adjacencyMap,
 
   outfile.close();
 
-  cout << "Predicted labels successfully written to " << predictedFilePath << endl;
+  // cout << "Predicted labels successfully written to " << predictedFilePath << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -98,23 +98,26 @@ int main(int argc, char *argv[]) {
   float alpha = stof(args["alpha"]);
 
   // Example output
-  cout << BOLD << GREEN << "Graph filename: " << RESET << BLUE << graph_filename
-       << RESET << endl;
+  // cout << BOLD << GREEN << "Graph filename: " << RESET << BLUE << graph_filename
+  //      << RESET << endl;
 
-  cout << BOLD << GREEN << "Seed filename: " << RESET << BLUE << seed_filename
-       << RESET << endl;
+  // cout << BOLD << GREEN << "Seed filename: " << RESET << BLUE << seed_filename
+  //      << RESET << endl;
 
-  cout << BOLD << GREEN << "Density: " << RESET << YELLOW << density << RESET
-       << endl;
+  // cout << BOLD << GREEN << "Density: " << RESET << YELLOW << density << RESET
+  //      << endl;
 
-  cout << BOLD << GREEN << "Temperature: " << RESET << MAGENTA << temperature
-       << RESET << endl;
+  // cout << BOLD << GREEN << "Temperature: " << RESET << MAGENTA << temperature
+  //      << RESET << endl;
 
-  cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
+  // cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
 
-  string base_dir = "../TestGraphs/Graphs/";
-  string filePath = base_dir + graph_filename;
-  string seed_path = base_dir + "seeds/" + seed_filename;
+  // string base_dir = "TestGraphs/Graphs/";
+  // string filePath = base_dir + graph_filename;
+  // string seed_path = base_dir + "seeds/" + seed_filename;
+
+  string filePath = graph_filename;
+  string seed_path = seed_filename;
 
   map<int, vector<int>> graph;
   vector<SeedMetrics> seeds;
@@ -124,31 +127,31 @@ int main(int argc, char *argv[]) {
   graph = generateAdjacencyMap(filePath);
   seeds = read_seeds_with_density(seed_path, graph, density, k);
 
-  cout << "Seed path --> " << seed_path << endl;
+  // cout << "Seed path --> " << seed_path << endl;
 
-  //Test Start
-  cout << "\n--- DEBUG: Seeds Loaded ---" << endl;
-  cout << "Total seeds = " << seeds.size() << endl;
+  // //Test Start
+  // cout << "\n--- DEBUG: Seeds Loaded ---" << endl;
+  // cout << "Total seeds = " << seeds.size() << endl;
 
-  for (size_t i = 0; i < seeds.size(); i++) {
-      const auto& s = seeds[i];
+  // for (size_t i = 0; i < seeds.size(); i++) {
+  //     const auto& s = seeds[i];
 
-      cout << "Seed " << i + 1 << ": { ";
-      for (int n : s.nodes) cout << n << " ";
-      cout << "}";
+  //     cout << "Seed " << i + 1 << ": { ";
+  //     for (int n : s.nodes) cout << n << " ";
+  //     cout << "}";
 
-      cout << " | Triangles: " << s.triangle_count
-          << " | Density: " << s.density << endl;
-  }
-  // Test End
+  //     cout << " | Triangles: " << s.triangle_count
+  //         << " | Density: " << s.density << endl;
+  // }
+  // // Test End
 
   for (const auto &seed_set : seeds) {
-    cout << "Seed:";
-    for (int node : seed_set.nodes) {
-      cout << " " << node;
-    }
-    cout << " | Triangles: " << seed_set.triangle_count
-         << " | Density: " << seed_set.density << endl;
+    // cout << "Seed:";
+    // for (int node : seed_set.nodes) {
+    //   cout << " " << node;
+    // }
+    // cout << " | Triangles: " << seed_set.triangle_count
+    //      << " | Density: " << seed_set.density << endl;
 
     auto mutable_seed = seed_set.nodes;
     set<int> s_maximal_sg;
@@ -156,20 +159,21 @@ int main(int argc, char *argv[]) {
     maximal_subgraphs.insert(s_maximal_sg);
   }
 
-  cout << "\n" << BOLD << YELLOW << "--- Maximal Subgraphs ---" 
-     << RESET << endl;
+  // cout << "\n" << BOLD << YELLOW << "--- Maximal Subgraphs ---" 
+    //  << RESET << endl;
 
   int cid = 1;
   for (const auto& sg : maximal_subgraphs) {
-      cout << "Cluster " << cid << ":z { ";
+      cout << "Subgraph " << cid << ":z { ";
 
       for (int n : sg) cout << n << " ";
       cout << "}";
       cid++;
   }
+    cout << endl;
 
   // Generate and Write Predicted Labels ---
-  cout << BOLD << GREEN << "--- Label Generation Phase ---" << RESET << endl;
+  // cout << BOLD << GREEN << "--- Label Generation Phase ---" << RESET << endl;
 
   // Construct a descriptive output filename
   string output_basename = graph_filename;
@@ -178,8 +182,12 @@ int main(int argc, char *argv[]) {
   if (lastdot != string::npos) {
     output_basename = output_basename.substr(0, lastdot);
   }
+  size_t lastslash = output_basename.find_last_of("/\\");
+  if (lastslash != string::npos) {
+      output_basename = output_basename.substr(lastslash + 1);
+  }
   
-  string predictedFilePath = "../TestGraphs/Graphs/PredictedLabels/" + output_basename + "_predicted_labels.txt";
+  string predictedFilePath = "/home/alek/CSE491-MTDS/TestGraphs/Graphs/PredictedLabels/" + output_basename + "_predicted_labels.txt";
 
   generatePredictedLabels(graph, maximal_subgraphs, predictedFilePath);
 
