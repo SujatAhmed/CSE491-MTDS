@@ -77,9 +77,8 @@ float triangleDensity(const vector<vector<int>> &adj,
       }
     }
   }
-  
-  return norm(num_triangles, k, 0.01);
-
+  // cout << "\nTriNum: " << num_triangles << " nodes: " << k;
+  return norm(num_triangles, k, 0.001);
 }
 
 // Remove edges from clique to get to desired threshold
@@ -208,8 +207,14 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 //     uniform_int_distribution<> size_dist(3, s);
 //     int subgraph_size = size_dist(gen);
     // Trying RD
-    int subgraph_size = (rand() % (s - 3 + 1)) + 3;
+    // int subgraph_size = (rand() % (s - 3 + 1)) + 3;
     // cout << "i:" << i << "\n";
+
+    uniform_int_distribution<> sizeDist(3, s);  // subgraph size
+    uniform_real_distribution<> triDist(th, 0.8);
+
+    int subgraph_size = sizeDist(gen);
+    float tridense = triDist(gen);
 
     vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
     makeClique(adj, subset);
@@ -219,7 +224,9 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
     // uniform_real_distribution<> density_dist(th, 0.8);
     // double tridense = density_dist(gen);
     // Trying RD
-    double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
+    // double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
+    
+    // cout << "\ntd: " << tridense << " th: " << th;
 
     removeEdgesToMatchTriangleDensity(adj, subset, tridense);
 

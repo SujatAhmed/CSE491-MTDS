@@ -1,5 +1,7 @@
 #include "../include/norm.h"
 #include <cmath>
+#include <iostream>
+
 using namespace std;
 
 
@@ -14,6 +16,7 @@ float norm(int triCount, int num_nodes, float k) {
     float den  = hOFx(k, maxTriDense, maxTriDense) - hOFx(k, 0.0f, maxTriDense);
 
     float norm_density = num / den;
+    // cout << "\n Norm Dense: " << norm_density << " TriDense: " << triDense;
 
     return norm_density;
 }

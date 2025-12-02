@@ -1,6 +1,9 @@
 #include "include/seedProcessing.h"
 #include "include/simulatedAnnealing.h"
 #include "preProcessing/include/adjacency.h"
+#include "include/subgraphAdjacency.h"
+#include "include/triangleEnumeration.h"
+#include "include/norm.h"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -122,7 +125,7 @@ int main(int argc, char *argv[]) {
   map<int, vector<int>> graph;
   vector<SeedMetrics> seeds;
   set<set<int>> maximal_subgraphs;
-  float k = 0.00001;
+  float k = 1;
 
   graph = generateAdjacencyMap(filePath);
   seeds = read_seeds_with_density(seed_path, graph, density, k);
@@ -164,13 +167,18 @@ int main(int argc, char *argv[]) {
 
   int cid = 1;
   for (const auto& sg : maximal_subgraphs) {
-      cout << "Subgraph " << cid << ":z { ";
+      int numNode = sg.size();
+      map<int, vector<int>> numTriSub = generateSubgraphAdjacencyMap(graph, sg);
+      int numTri = bruteForceTriangleCounting(numTriSub);
+      float triangleDensity = norm(numTri, numNode, 0.001f);
 
+
+      cout << "\nSubgraph " << cid << ":z { ";
       for (int n : sg) cout << n << " ";
-      cout << "}";
+      cout << "} N: " << numNode << " Triangles: " << numTri << " Density: " << triangleDensity;
       cid++;
   }
-    cout << endl;
+  cout << endl;
 
   // Generate and Write Predicted Labels ---
   // cout << BOLD << GREEN << "--- Label Generation Phase ---" << RESET << endl;

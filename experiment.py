@@ -61,7 +61,7 @@ experiments = [
 # -----------------------------------------
 
 df_cols = [
-    "Name", "Nodes", "TDS_Count", "Temperature", "Alpha",
+    "Name", "Nodes", "TDS_Count", "Density", "Temperature", "Alpha",
     "ARI", "NMI", "Purity", "H_true", "H_pred", "F_measure", "FM",
     "Generated_Subgraphs", "Predicted_Subgraphs"
 ]
@@ -152,7 +152,7 @@ for exp_id, exp in enumerate(experiments, start=1):
     # SAVE ROW
     # ----------------------------
     results.append([
-        f"Graph{exp_id}", n, t, temp, alpha,
+        f"Graph{exp_id}", n, t, th, temp, alpha,
         ari, nmi, purity, H_true, H_pred, f_measure, fm,
         generated_subgraphs, predicted_subgraphs
     ])
