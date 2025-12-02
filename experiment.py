@@ -223,5 +223,23 @@ df = pd.DataFrame(results, columns=df_cols)
 output_excel = f"{BASE}/experiment_results.xlsx"
 df.to_excel(output_excel, index=False)
 
+# Check if the Excel file already exists
+if os.path.exists(output_excel):
+    print("Existing Excel found. Appending new results...")
+    
+    # 1. Read the existing DataFrame
+    df_existing = pd.read_excel(output_excel)
+    
+    # 2. Concatenate the existing data with the new results
+    df_combined = pd.concat([df_existing, df], ignore_index=True)
+    
+    # 3. Save the combined DataFrame back to the file (overwriting with combined data)
+    df_combined.to_excel(output_excel, index=False)
+else:
+    print("No existing Excel found. Creating new file...")
+    
+    # If the file doesn't exist, just save the new results
+    df.to_excel(output_excel, index=False)
+
 print("\n=== ALL EXPERIMENTS COMPLETE ===")
 print("Saved Excel at:", output_excel)
