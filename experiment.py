@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 from sklearn.metrics import f1_score, fowlkes_mallows_score
+from cdlib import evaluation, NodeClustering
 from scipy.stats import entropy
 import os
 
@@ -45,14 +46,65 @@ def cluster_entropy(labels):
     probs = counts / counts.sum()
     return entropy(probs, base=2)
 
+def compute_gnmi(y_true, y_pred):
+    # Convert labels → clusters
+    clusters_true = {}
+    clusters_pred = {}
+
+    for i, c in enumerate(y_true):
+        clusters_true.setdefault(c, []).append(i)
+
+    for i, c in enumerate(y_pred):
+        clusters_pred.setdefault(c, []).append(i)
+
+    true_nc = NodeClustering(list(clusters_true.values()), graph=None, method_name="true")
+    pred_nc = NodeClustering(list(clusters_pred.values()), graph=None, method_name="pred")
+
+    score = evaluation.overlapping_normalized_mutual_information_LFK(pred_nc, true_nc).score
+    return score
+
+def fuzzy_ARI(U, V):
+    n = U.shape[0]
+    M = np.dot(U.T, U)
+    N = np.dot(V.T, V)
+
+    sum_comb_M = np.sum(M*(M-1)/2)
+    sum_comb_N = np.sum(N*(N-1)/2)
+
+    MN = np.dot(U.T, V)
+    sum_comb_MN = np.sum(MN*(MN-1)/2)
+
+    expected = (sum_comb_M * sum_comb_N) / (n*(n-1)/2)
+    max_index = (sum_comb_M + sum_comb_N)/2
+
+    return (sum_comb_MN - expected) / (max_index - expected)
+
+
+def compute_fuzzy_ari(y_true, y_pred):
+    # Convert hard labels → membership matrices
+    classes_true = np.unique(y_true)
+    classes_pred = np.unique(y_pred)
+
+    onehot_true = np.zeros((len(y_true), len(classes_true)))
+    onehot_pred = np.zeros((len(y_pred), len(classes_pred)))
+
+    for i, c in enumerate(classes_true):
+        onehot_true[y_true == c, i] = 1
+
+    for i, c in enumerate(classes_pred):
+        onehot_pred[y_pred == c, i] = 1
+
+    return fuzzy_ARI(onehot_pred, onehot_true)
+
+
 
 # -----------------------------------------
 # EXPERIMENT CONFIGURATION
 # -----------------------------------------
 
 experiments = [
-    {"n": 30, "t": 4, "th": 0.6, "temp": 100, "alpha": 0.95},
-    {"n": 50, "t": 5, "th": 0.7, "temp": 200, "alpha": 0.90},
+    {"n": 30, "t": 4, "th": 0.6, "temp": 100, "alpha": 0.95, "k" : 0.001},
+    {"n": 50, "t": 5, "th": 0.7, "temp": 200, "alpha": 0.90, "k" : 0.001},
     # ADD MORE EXPERIMENTS HERE
 ]
 
@@ -61,8 +113,8 @@ experiments = [
 # -----------------------------------------
 
 df_cols = [
-    "Name", "Nodes", "TDS_Count", "Density", "Temperature", "Alpha",
-    "ARI", "NMI", "Purity", "H_true", "H_pred", "F_measure", "FM",
+    "Name", "Nodes", "TDS_Count", "Density", "Temperature", "Alpha", "k", 
+    "ARI", "NMI", "GNMI", "FuzzyARI", "Purity", "H_true", "H_pred", "F_measure", "FM",
     "Generated_Subgraphs", "Predicted_Subgraphs"
 ]
 
@@ -82,6 +134,8 @@ for exp_id, exp in enumerate(experiments, start=1):
     th = exp["th"]
     temp = exp["temp"]
     alpha = exp["alpha"]
+    k = exp["k"]
+
 
     # File naming
     graph_file = f"Graph{exp_id}.txt"
@@ -101,7 +155,7 @@ for exp_id, exp in enumerate(experiments, start=1):
 
     syng_cmd = [
         SYN, graph_path, gt_path,
-        seed_path, str(n), str(t), str(th)
+        seed_path, str(n), str(t), str(th), str(k)
     ]
 
     syng_out = subprocess.check_output(syng_cmd, text=True)
@@ -120,7 +174,8 @@ for exp_id, exp in enumerate(experiments, start=1):
         f"seed={seed_path}",
         f"density={th}",
         f"temperature={temp}",
-        f"alpha={alpha}"
+        f"alpha={alpha}",
+        f"normalize_const_k={k}"
     ]
 
     mtds_out = subprocess.check_output(mtds_cmd, text=True)
@@ -142,6 +197,8 @@ for exp_id, exp in enumerate(experiments, start=1):
 
     ari = adjusted_rand_score(y_true, y_pred)
     nmi = normalized_mutual_info_score(y_true, y_pred)
+    gnmi = compute_gnmi(y_true, y_pred)
+    fuzzyari = compute_fuzzy_ari(y_true, y_pred)
     purity = purity_score(y_true, y_pred)
     H_true = cluster_entropy(y_true)
     H_pred = cluster_entropy(y_pred)
@@ -152,8 +209,8 @@ for exp_id, exp in enumerate(experiments, start=1):
     # SAVE ROW
     # ----------------------------
     results.append([
-        f"Graph{exp_id}", n, t, th, temp, alpha,
-        ari, nmi, purity, H_true, H_pred, f_measure, fm,
+        f"Graph{exp_id}", n, t, th, temp, alpha, k, 
+        ari, nmi, gnmi, fuzzyari, purity, H_true, H_pred, f_measure, fm,
         generated_subgraphs, predicted_subgraphs
     ])
 

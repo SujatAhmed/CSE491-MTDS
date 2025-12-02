@@ -32,7 +32,8 @@ std::set<int> simulated_annealing_v(
     float threshold,
     std::map<int, std::vector<int>> &graph,
     int temperature,
-    float alpha
+    float alpha,
+    float norm_k
 );
 
 #endif // SIMULATED_ANNEALING_V_H

@@ -27,11 +27,9 @@ float sigmoid1(float x);
 
 using namespace std;
 
-float k = 0.0001;
-
 set<int> simulated_annealing_v(set<int> &seed, float threshold,
                                map<int, vector<int>> &graph, int temperature,
-                               float alpha) {
+                               float alpha, float norm_k) {
 
   set<int> S = seed;
   int triangle_count;
@@ -74,9 +72,9 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
       T_S = bruteForceTriangleCounting(S_map);
 
       // E_S = objective_function(T_S, S.size());
-      E_S = norm(T_S, S.size(), k);
+      E_S = norm(T_S, S.size(), norm_k);
       // E_Sprime = objective_function(T_Sprime, S.size() + 1);
-      E_Sprime = norm(T_Sprime, (S.size() + 1), k);
+      E_Sprime = norm(T_Sprime, (S.size() + 1), norm_k);
 
       // cout << "Trying node " << u << ":";
       // cout << " Triangles if added = " << T_Sprime

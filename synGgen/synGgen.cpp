@@ -13,9 +13,9 @@
 
 using namespace std;
 
-void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs);
+void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs, float norm_k);
 void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
-                                 const vector<vector<int>> &adj);
+                                 const vector<vector<int>> &adj, float norm_k);
 
 // Global random number generator
 random_device rd;
@@ -51,7 +51,7 @@ void makeClique(vector<vector<int>> &adj, const vector<int> &subset_nodes) {
 }
 
 float triangleDensity(const vector<vector<int>> &adj,
-                      const vector<int> &subset) {
+                      const vector<int> &subset, float norm_k) {
   int num_triangles = 0;
   int k = subset.size(); // Number of nodes in the subgraph
 
@@ -78,13 +78,13 @@ float triangleDensity(const vector<vector<int>> &adj,
     }
   }
   // cout << "\nTriNum: " << num_triangles << " nodes: " << k;
-  return norm(num_triangles, k, 0.001);
+  return norm(num_triangles, k, norm_k);
 }
 
 // Remove edges from clique to get to desired threshold
 void removeEdgesToMatchTriangleDensity(vector<vector<int>> &adj,
                                        const vector<int> &subset,
-                                       float tridense) {
+                                       float tridense, float norm_k) {
   vector<pair<int, int>> edges;
 
   // Collect all edges within the subset
@@ -109,7 +109,7 @@ void removeEdgesToMatchTriangleDensity(vector<vector<int>> &adj,
     adj[u][v] = 0;
     adj[v][u] = 0;
 
-    float current_density = triangleDensity(adj, subset);
+    float current_density = triangleDensity(adj, subset, norm_k);
     // cout << "\nCD: " << current_density << " td: " << tridense << "\n\n";
     if (current_density < tridense) {
       // Restore the edge if triangle density drops too low
@@ -119,7 +119,7 @@ void removeEdgesToMatchTriangleDensity(vector<vector<int>> &adj,
   }
 
   // Final density print
-  float final_density = triangleDensity(adj, subset);
+  float final_density = triangleDensity(adj, subset, norm_k);
 }
 
 // Connect the nodes to form the sparse graph
@@ -194,7 +194,7 @@ pair<vector<vector<int>>, vector<int>>
 generateSyntheticGraph(int n, int t, double th, double prob_between,
                        double prob_external, double prob_amongNonSub,
                        int max_edges_between_subgraphs,
-                       vector<vector<int>> &triangle_subgraphs) {
+                       vector<vector<int>> &triangle_subgraphs, float norm_k) {
   vector<int> full_node_set(n);
   iota(full_node_set.begin(), full_node_set.end(), 0);
 
@@ -218,7 +218,7 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 
     vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
     makeClique(adj, subset);
-    float current_density = triangleDensity(adj, subset);
+    float current_density = triangleDensity(adj, subset, norm_k);
     // cout << "\n\nafter forming cl: " << current_density << "\n\n";
 
     // uniform_real_distribution<> density_dist(th, 0.8);
@@ -228,7 +228,7 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
     
     // cout << "\ntd: " << tridense << " th: " << th;
 
-    removeEdgesToMatchTriangleDensity(adj, subset, tridense);
+    removeEdgesToMatchTriangleDensity(adj, subset, tridense, norm_k);
 
     for (int node : subset) {
       available_nodes.erase(
@@ -239,7 +239,7 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 
     triangle_subgraphs.push_back(subset);
   }
-  printTriangleDenseSubgraphs(triangle_subgraphs, adj);
+  printTriangleDenseSubgraphs(triangle_subgraphs, adj, norm_k);
 
   connectNodes(adj, triangle_subgraphs, available_nodes, prob_between,
                prob_external, prob_amongNonSub, max_edges_between_subgraphs, n,
@@ -249,7 +249,7 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 }
 
 void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
-                                 const vector<vector<int>> &adj) {
+                                 const vector<vector<int>> &adj, float norm_k) {
   // cout << "\n--- Generated Triangle-Dense Subgraphs and Densities ---" << endl;
   if (subgraphs.empty()) {
     cout << "No triangle-dense subgraphs were generated." << endl;
@@ -260,7 +260,7 @@ void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
     const vector<int> &current_subset =
         subgraphs[i]; // Get the current subgraph (subset of nodes)
     float density = triangleDensity(
-        adj, current_subset); // Calculate density for this subgraph
+        adj, current_subset, norm_k); // Calculate density for this subgraph
 
     cout << "Subgraph " << i + 1 << " (Nodes): [";
     for (size_t j = 0; j < current_subset.size(); ++j) {
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
   if (argc < 7) {
     cerr << "Usage: " << argv[0]
          << " <output_filename.txt> <ground_truth_filename.labels> "
-            "<seed_filename.txt> <n> <t> <th>"
+            "<seed_filename.txt> <n> <t> <th> <k>"
          << endl;
     return 1;
   }
@@ -321,6 +321,7 @@ int main(int argc, char *argv[]) {
   int n = stoi(argv[4]);       // total nodes
   int t = stoi(argv[5]);       // triangle-rich subgraphs
   double th = stod(argv[6]);   // density threshold
+  float norm_k = stod(argv[7]); // k constant for normalization
 
   // string base_dir = "TestGraphs/Graphs/";
   // string filePath = base_dir + filename;
@@ -345,7 +346,7 @@ int main(int argc, char *argv[]) {
 
   auto [graph, labels] = generateSyntheticGraph(
       n, t, th, prob_between, prob_external, prob_amongNonSub,
-      max_edges_between_subgraphs, triangle_subgraph);
+      max_edges_between_subgraphs, triangle_subgraph, norm_k);
 
   ofstream outfile(filePath);
   for (int i = 0; i < n; ++i) {

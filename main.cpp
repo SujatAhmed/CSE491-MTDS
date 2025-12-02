@@ -64,10 +64,10 @@ void generatePredictedLabels(const map<int, vector<int>>& adjacencyMap,
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 6) {
+  if (argc < 7) {
     cerr << "Usage: " << argv[0]
          << " graph=<graph_filename> seed=<seed_filename>"
-         << " density=<float> temperature=<int> alpha=<float>" << endl;
+         << " density=<float> temperature=<int> alpha=<float> normalize_const_k=<float>" << endl;
     return 1;
   }
 
@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
   float density = stof(args["density"]);
   int temperature = stoi(args["temperature"]);
   float alpha = stof(args["alpha"]);
+  float norm_k = stof(args["normalize_const_k"]);
 
   // Example output
   // cout << BOLD << GREEN << "Graph filename: " << RESET << BLUE << graph_filename
@@ -125,10 +126,9 @@ int main(int argc, char *argv[]) {
   map<int, vector<int>> graph;
   vector<SeedMetrics> seeds;
   set<set<int>> maximal_subgraphs;
-  float k = 1;
 
   graph = generateAdjacencyMap(filePath);
-  seeds = read_seeds_with_density(seed_path, graph, density, k);
+  seeds = read_seeds_with_density(seed_path, graph, density, norm_k);
 
   // cout << "Seed path --> " << seed_path << endl;
 
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     auto mutable_seed = seed_set.nodes;
     set<int> s_maximal_sg;
-    s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha);
+    s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha, norm_k);
     maximal_subgraphs.insert(s_maximal_sg);
   }
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
       int numNode = sg.size();
       map<int, vector<int>> numTriSub = generateSubgraphAdjacencyMap(graph, sg);
       int numTri = bruteForceTriangleCounting(numTriSub);
-      float triangleDensity = norm(numTri, numNode, 0.001f);
+      float triangleDensity = norm(numTri, numNode, norm_k);
 
 
       cout << "\nSubgraph " << cid << ":z { ";
