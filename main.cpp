@@ -25,7 +25,7 @@ const string CYAN = "\033[36m";
 const string BOLD = "\033[1m";
 
 void generatePredictedLabels(const map<int, vector<int>>& adjacencyMap,
-                             const set<set<int>>& maximalSubgraphs,
+                             const vector<set<int>>& maximalSubgraphs,
                              const string& predictedFilePath) {
   // Step 1: Initialize all nodes with label -1
   map<int, int> labels;
@@ -59,7 +59,6 @@ void generatePredictedLabels(const map<int, vector<int>>& adjacencyMap,
 
   outfile.close();
 
-  // cout << "Predicted labels successfully written to " << predictedFilePath << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -101,21 +100,6 @@ int main(int argc, char *argv[]) {
   float alpha = stof(args["alpha"]);
   float norm_k = stof(args["normalize_const_k"]);
 
-  // Example output
-  // cout << BOLD << GREEN << "Graph filename: " << RESET << BLUE << graph_filename
-  //      << RESET << endl;
-
-  // cout << BOLD << GREEN << "Seed filename: " << RESET << BLUE << seed_filename
-  //      << RESET << endl;
-
-  // cout << BOLD << GREEN << "Density: " << RESET << YELLOW << density << RESET
-  //      << endl;
-
-  // cout << BOLD << GREEN << "Temperature: " << RESET << MAGENTA << temperature
-  //      << RESET << endl;
-
-  // cout << BOLD << GREEN << "Alpha: " << RESET << CYAN << alpha << RESET << endl;
-
   // string base_dir = "TestGraphs/Graphs/";
   // string filePath = base_dir + graph_filename;
   // string seed_path = base_dir + "seeds/" + seed_filename;
@@ -125,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   map<int, vector<int>> graph;
   vector<SeedMetrics> seeds;
-  set<set<int>> maximal_subgraphs;
+  vector<set<int>> maximal_subgraphs;
 
   graph = generateAdjacencyMap(filePath);
   seeds = read_seeds_with_density(seed_path, graph, density, norm_k);
@@ -159,7 +143,7 @@ int main(int argc, char *argv[]) {
     auto mutable_seed = seed_set.nodes;
     set<int> s_maximal_sg;
     s_maximal_sg = simulated_annealing_v(mutable_seed, density, graph, temperature, alpha, norm_k);
-    maximal_subgraphs.insert(s_maximal_sg);
+    maximal_subgraphs.push_back(s_maximal_sg);
   }
 
   // cout << "\n" << BOLD << YELLOW << "--- Maximal Subgraphs ---" 
@@ -179,9 +163,6 @@ int main(int argc, char *argv[]) {
       cid++;
   }
   cout << endl;
-
-  // Generate and Write Predicted Labels ---
-  // cout << BOLD << GREEN << "--- Label Generation Phase ---" << RESET << endl;
 
   // Construct a descriptive output filename
   string output_basename = graph_filename;
