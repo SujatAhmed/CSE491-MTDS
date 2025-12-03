@@ -103,8 +103,8 @@ def compute_fuzzy_ari(y_true, y_pred):
 # -----------------------------------------
 
 experiments = [
-    {"n": 30, "t": 4, "th": 0.6, "temp": 100, "alpha": 0.95, "k" : 0.001},
-    {"n": 50, "t": 5, "th": 0.7, "temp": 200, "alpha": 0.90, "k" : 0.001},
+    {"n": 30, "t": 3, "th": 0.6, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
+    {"n": 50, "t": 3, "th": 0.45, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
     # ADD MORE EXPERIMENTS HERE
 ]
 
@@ -113,7 +113,7 @@ experiments = [
 # -----------------------------------------
 
 df_cols = [
-    "Name", "Nodes", "TDS_Count", "Density", "Temperature", "Alpha", "k", 
+    "Name", "Nodes", "TDS_Count", "Density", "Temperature", "Alpha", "norm_k", "k_Truss",
     "ARI", "NMI", "GNMI", "FuzzyARI", "Purity", "H_true", "H_pred", "F_measure", "FM",
     "Generated_Subgraphs", "Predicted_Subgraphs"
 ]
@@ -134,7 +134,8 @@ for exp_id, exp in enumerate(experiments, start=1):
     th = exp["th"]
     temp = exp["temp"]
     alpha = exp["alpha"]
-    k = exp["k"]
+    norm_k = exp["norm_k"]
+    k_Truss = exp["k_Truss"]
 
 
     # File naming
@@ -155,7 +156,7 @@ for exp_id, exp in enumerate(experiments, start=1):
 
     syng_cmd = [
         SYN, graph_path, gt_path,
-        seed_path, str(n), str(t), str(th), str(k)
+        seed_path, str(n), str(t), str(th), str(norm_k), str(k_Truss) 
     ]
 
     syng_out = subprocess.check_output(syng_cmd, text=True)
@@ -175,7 +176,7 @@ for exp_id, exp in enumerate(experiments, start=1):
         f"density={th}",
         f"temperature={temp}",
         f"alpha={alpha}",
-        f"normalize_const_k={k}"
+        f"normalize_const_k={norm_k}"
     ]
 
     mtds_out = subprocess.check_output(mtds_cmd, text=True)
@@ -209,7 +210,7 @@ for exp_id, exp in enumerate(experiments, start=1):
     # SAVE ROW
     # ----------------------------
     results.append([
-        f"Graph{exp_id}", n, t, th, temp, alpha, k, 
+        f"Graph{exp_id}", n, t, th, temp, alpha, norm_k, k_Truss, 
         ari, nmi, gnmi, fuzzyari, purity, H_true, H_pred, f_measure, fm,
         generated_subgraphs, predicted_subgraphs
     ])
@@ -225,7 +226,7 @@ df.to_excel(output_excel, index=False)
 
 # Check if the Excel file already exists
 if os.path.exists(output_excel):
-    print("Existing Excel found. Appending new results...")
+    print("\nExisting Excel found. Appending new results...")
     
     # 1. Read the existing DataFrame
     df_existing = pd.read_excel(output_excel)

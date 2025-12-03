@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include "../include/norm.h"
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -204,8 +205,8 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 
   for (int i = 1; i <= t; ++i) {
     int s = (n / t) - 1;
-//     uniform_int_distribution<> size_dist(3, s);
-//     int subgraph_size = size_dist(gen);
+  //     uniform_int_distribution<> size_dist(3, s);
+  //     int subgraph_size = size_dist(gen);
     // Trying RD
     // int subgraph_size = (rand() % (s - 3 + 1)) + 3;
     // cout << "i:" << i << "\n";
@@ -248,6 +249,129 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
   return {adj, node_to_subgraph};
 }
 
+
+// ==============================TEST K-TRUSS START==================================
+// Encode an edge u<v as a single number
+inline long long encodeEdge(int u, int v) {
+    if (u > v) swap(u, v);
+    return ((long long)u << 32) | v;
+}
+
+// Count common neighbors of u and v in sorted adjacency lists
+int countCommonNeighbors(const vector<int> &a, const vector<int> &b) {
+    int i = 0, j = 0, cnt = 0;
+    while (i < a.size() && j < b.size()) {
+        if (a[i] == b[j]) { cnt++; i++; j++; }
+        else if (a[i] < b[j]) i++;
+        else j++;
+    }
+    return cnt;
+}
+
+// Returns vector of connected subgraphs (each as a set of nodes) of the k-truss
+vector<unordered_set<int>> kTruss(vector<vector<int>> adj, int k) {
+    int n = adj.size();
+
+    // Sort & dedup adjacency lists
+    for (int i = 0; i < n; i++) {
+        sort(adj[i].begin(), adj[i].end());
+        adj[i].erase(unique(adj[i].begin(), adj[i].end()), adj[i].end());
+    }
+
+    // Map edges to indices
+    vector<pair<int,int>> edges;
+    unordered_map<long long,int> edgeId;
+    int id = 0;
+    for (int u = 0; u < n; u++) {
+        for (int v : adj[u]) {
+            if (u < v) {
+                long long key = encodeEdge(u,v);
+                if (!edgeId.count(key)) {
+                    edgeId[key] = id++;
+                    edges.push_back({u,v});
+                }
+            }
+        }
+    }
+    int m = edges.size();
+
+    // Compute initial support (#triangles per edge)
+    vector<int> support(m,0);
+    vector<bool> removed(m,false);
+    for (int e = 0; e < m; e++) {
+        int u = edges[e].first, v = edges[e].second;
+        support[e] = countCommonNeighbors(adj[u], adj[v]);
+    }
+
+    // Copy adjacency for peeling
+    vector<vector<int>> adj_copy = adj;
+    queue<int> q;
+
+    // Initialize queue with edges having support < k-2
+    for (int e = 0; e < m; e++)
+        if (support[e] < k-2) q.push(e);
+
+    // Peeling process
+    while (!q.empty()) {
+        int e = q.front(); q.pop();
+        if (removed[e]) continue;
+        removed[e] = true;
+
+        int u = edges[e].first, v = edges[e].second;
+        // Remove edge from adj_copy
+        adj_copy[u].erase(lower_bound(adj_copy[u].begin(), adj_copy[u].end(), v));
+        adj_copy[v].erase(lower_bound(adj_copy[v].begin(), adj_copy[v].end(), u));
+
+        // Update support of edges forming triangles with (u,v)
+        vector<int> common;
+        int i=0, j=0;
+        while (i<adj_copy[u].size() && j<adj_copy[v].size()) {
+            if (adj_copy[u][i]==adj_copy[v][j]) { common.push_back(adj_copy[u][i]); i++; j++; }
+            else if (adj_copy[u][i]<adj_copy[v][j]) i++;
+            else j++;
+        }
+
+        for (int x : common) {
+            long long k1 = encodeEdge(u,x), k2 = encodeEdge(v,x);
+            if (edgeId.count(k1)) { int e1 = edgeId[k1]; if (!removed[e1]) { support[e1]--; if (support[e1]<k-2) q.push(e1); } }
+            if (edgeId.count(k2)) { int e2 = edgeId[k2]; if (!removed[e2]) { support[e2]--; if (support[e2]<k-2) q.push(e2); } }
+        }
+    }
+
+    // Build adjacency for remaining edges
+    unordered_map<int, vector<int>> sub_adj;
+    for (int e = 0; e < m; e++) {
+        if (!removed[e]) {
+            int u = edges[e].first, v = edges[e].second;
+            sub_adj[u].push_back(v);
+            sub_adj[v].push_back(u);
+        }
+    }
+
+    // Extract connected components
+    vector<unordered_set<int>> components;
+    unordered_set<int> visited;
+    for (auto &[u,_] : sub_adj) {
+        if (visited.count(u)) continue;
+        unordered_set<int> comp;
+        queue<int> q2; q2.push(u);
+        visited.insert(u);
+        while (!q2.empty()) {
+            int cur = q2.front(); q2.pop();
+            comp.insert(cur);
+            for (int v : sub_adj[cur]) {
+                if (!visited.count(v)) { visited.insert(v); q2.push(v); }
+            }
+        }
+        components.push_back(comp);
+    }
+
+    return components;
+}
+
+// ==============================TEST K-TRUSS END++==================================
+
+
 void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
                                  const vector<vector<int>> &adj, float norm_k) {
   // cout << "\n--- Generated Triangle-Dense Subgraphs and Densities ---" << endl;
@@ -273,44 +397,14 @@ void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
   }
   cout << "----------------------------------------------------" << endl;
 }
-vector<vector<int>>
-extractOneTriangleFromEachSubgraph(const vector<vector<int>> &subgraphs,
-                                   const vector<vector<int>> &adj) {
 
-  vector<vector<int>> triangles;
-
-  for (const auto &subset : subgraphs) {
-    int k = subset.size();
-    bool found = false;
-
-    // Try all triplets (u,v,w) in the subset
-    for (int i = 0; i < k && !found; ++i) {
-      for (int j = i + 1; j < k && !found; ++j) {
-        for (int l = j + 1; l < k && !found; ++l) {
-          int u = subset[i];
-          int v = subset[j];
-          int w = subset[l];
-
-          if (adj[u][v] == 1 && adj[v][w] == 1 && adj[w][u] == 1) {
-            triangles.push_back({u, v, w});
-            found = true;
-          }
-        }
-      }
-    }
-
-    // If no triangle found, we skip this subgraph
-  }
-
-  return triangles;
-}
 
 int main(int argc, char *argv[]) {
 
   if (argc < 7) {
     cerr << "Usage: " << argv[0]
          << " <output_filename.txt> <ground_truth_filename.labels> "
-            "<seed_filename.txt> <n> <t> <th> <k>"
+            "<seed_filename.txt> <n> <t> <th> <norm_k> <k-Truss>"
          << endl;
     return 1;
   }
@@ -322,6 +416,7 @@ int main(int argc, char *argv[]) {
   int t = stoi(argv[5]);       // triangle-rich subgraphs
   double th = stod(argv[6]);   // density threshold
   float norm_k = stod(argv[7]); // k constant for normalization
+  int k_truss = stod(argv[8]);  // k-truss
 
   // string base_dir = "TestGraphs/Graphs/";
   // string filePath = base_dir + filename;
@@ -381,22 +476,30 @@ int main(int argc, char *argv[]) {
   }
   label_file.close();
   // cout << "Cluster labels saved to " << label_filename << endl;
-
-  vector<vector<int>> seedTriangles =
-      extractOneTriangleFromEachSubgraph(triangle_subgraph, graph);
+// ===================test========================
+    vector<vector<int>> adj_list(n);
+    for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      if (graph[i][j])
+        adj_list[i].push_back(j);
+    auto subgraphs = kTruss(adj_list, k_truss);
 
   ofstream seed_file(seedPath);
-  for (const auto &triangle : seedTriangles) {
-    for (int i = 0; i < triangle.size(); ++i) {
-      seed_file << triangle[i];
-      if (i < triangle.size() - 1)
-        seed_file << " ";
-    }
-    seed_file << "\n";
+  for (const auto &subgraph : subgraphs) {  // subgraphs is vector<unordered_set<int>>
+      bool first = true;
+      for (int node : subgraph) {
+          if (!first) seed_file << " ";
+          seed_file << node;
+          first = false;
+      }
+      seed_file << "\n";
   }
   seed_file.close();
+  
 
+// ===================test========================
   // cout << "Seed triangles saved to " << seed_filename << endl;
+
 
   return 0;
 }

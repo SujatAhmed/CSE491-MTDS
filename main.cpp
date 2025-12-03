@@ -133,19 +133,19 @@ int main(int argc, char *argv[]) {
   // cout << "Seed path --> " << seed_path << endl;
 
   // //Test Start
-  // cout << "\n--- DEBUG: Seeds Loaded ---" << endl;
-  // cout << "Total seeds = " << seeds.size() << endl;
+  cout << "\n--- DEBUG: Seeds Loaded ---" << endl;
+  cout << "Total seeds = " << seeds.size() << endl;
 
-  // for (size_t i = 0; i < seeds.size(); i++) {
-  //     const auto& s = seeds[i];
+  for (size_t i = 0; i < seeds.size(); i++) {
+      const auto& s = seeds[i];
 
-  //     cout << "Seed " << i + 1 << ": { ";
-  //     for (int n : s.nodes) cout << n << " ";
-  //     cout << "}";
+      cout << "Seed " << i + 1 << ": { ";
+      for (int n : s.nodes) cout << n << " ";
+      cout << "}";
 
-  //     cout << " | Triangles: " << s.triangle_count
-  //         << " | Density: " << s.density << endl;
-  // }
+      cout << " | Triangles: " << s.triangle_count
+          << " | Density: " << s.density << endl;
+  }
   // // Test End
 
   for (const auto &seed_set : seeds) {
