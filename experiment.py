@@ -154,9 +154,15 @@ def random_tests(
 # EXPERIMENT CONFIGURATION
 # --------------------------------------------------------------------------------------------------
 
+# experiments = [
+#     {"n": 30, "t": 3, "th": 0.6, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
+#     {"n": 50, "t": 3, "th": 0.45, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
+#     # ADD MORE EXPERIMENTS HERE
+# ]
+
 experiments = [
-    {"n": 30, "t": 3, "th": 0.6, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
-    {"n": 50, "t": 3, "th": 0.45, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
+    {"n": 30, "t": 2, "th": 0.8, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
+    {"n": 50, "t": 3, "th": 0.85, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
     # ADD MORE EXPERIMENTS HERE
 ]
 
@@ -293,7 +299,7 @@ for exp_id, exp in enumerate(experiments, start=1):
 
 df = pd.DataFrame(results, columns=df_cols)
 output_excel = f"{BASE}/experiment_results.xlsx"
-df.to_excel(output_excel, index=False)
+# df.to_excel(output_excel, index=False)
 
 # Check if the Excel file already exists
 if os.path.exists(output_excel):
