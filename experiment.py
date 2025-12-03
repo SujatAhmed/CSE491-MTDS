@@ -5,6 +5,7 @@ from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 from sklearn.metrics import f1_score, fowlkes_mallows_score
 from cdlib import evaluation, NodeClustering
 from scipy.stats import entropy
+import random
 import os
 
 # -----------------------------------------
@@ -96,11 +97,62 @@ def compute_fuzzy_ari(y_true, y_pred):
 
     return fuzzy_ARI(onehot_pred, onehot_true)
 
+# --------------------------------------------------------------------------------------------------
+# EXPERIMENT FUNCTIONS
+# --------------------------------------------------------------------------------------------------
+
+def full_grid(n_range, t_range, th_range, temp_range, alpha_range,
+              norm_k=0.001, ktruss_range=(2,4)):
+    experiments = []
+    for n in n_range:
+        for t in t_range:
+            for th in th_range:
+                for temp in temp_range:
+                    for alpha in alpha_range:
+                        for k in ktruss_range:
+                            experiments.append({
+                                "n": n,
+                                "t": t,
+                                "th": th,
+                                "temp": temp,
+                                "alpha": alpha,
+                                "norm_k": norm_k,
+                                "k_Truss": k
+                            })
+    return experiments
 
 
-# -----------------------------------------
+def random_tests(
+        n_min, n_max,
+        t_min, t_max,
+        th_min, th_max,
+        temp_min, temp_max,
+        alpha_min, alpha_max,
+        norm_k=0.001,
+        k_min=2, k_max=4,
+        count=100):
+
+    experiments = []
+    for _ in range(count):
+        experiments.append({
+            "n": random.randint(n_min, n_max),
+            "t": random.randint(t_min, t_max),
+            "th": round(random.uniform(th_min, th_max), 3),
+            "temp": random.randint(temp_min, temp_max),
+            "alpha": round(random.uniform(alpha_min, alpha_max), 3),
+            "norm_k": norm_k,
+            "k_Truss": random.randint(k_min, k_max)
+        })
+    return experiments
+
+# --------------------------------------------------------------------------------------------------
+# EXPERIMENT FUNCTIONS
+# --------------------------------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------------------------------
 # EXPERIMENT CONFIGURATION
-# -----------------------------------------
+# --------------------------------------------------------------------------------------------------
 
 experiments = [
     {"n": 30, "t": 3, "th": 0.6, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
@@ -108,9 +160,28 @@ experiments = [
     # ADD MORE EXPERIMENTS HERE
 ]
 
-# -----------------------------------------
+# experiments = random_tests(
+#     n_min=30, n_max=300,
+#     t_min=3, t_max=6,
+#     th_min=0.3, th_max=0.8,
+#     temp_min=90, temp_max=250,
+#     alpha_min=0.8, alpha_max=0.99,
+#     count=20
+# )
+
+# experiments = full_grid(
+#     n_range=range(30, 301, 10),
+#     t_range=range(3, 7),
+#     th_range=np.arange(0.3, 0.81, 0.05),
+#     temp_range=range(90, 251, 20),
+#     alpha_range=np.arange(0.8, 1.0, 0.05),
+#     norm_k=0.001,
+#     ktruss_range=range(2, 5)
+# )
+
+# --------------------------------------------------------------------------------------------------
 # DATAFRAME INIT
-# -----------------------------------------
+# --------------------------------------------------------------------------------------------------
 
 df_cols = [
     "Name", "Nodes", "TDS_Count", "Density", "Temperature", "Alpha", "norm_k", "k_Truss",

@@ -191,7 +191,7 @@ void connectNodes(vector<vector<int>> &adj,
 }
 
 // Main generator
-pair<vector<vector<int>>, vector<int>>
+pair<vector<vector<int>>, vector<int>> 
 generateSyntheticGraph(int n, int t, double th, double prob_between,
                        double prob_external, double prob_amongNonSub,
                        int max_edges_between_subgraphs,

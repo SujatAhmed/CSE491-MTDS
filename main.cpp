@@ -38,9 +38,7 @@ void generatePredictedLabels(const map<int, vector<int>>& adjacencyMap,
   int clusterId = 1;
   for (const auto &subgraph : maximalSubgraphs) {
     for (int node : subgraph) {
-      // Note: If a node appears in multiple maximal subgraphs, it will be 
-      // labeled with the ID of the last subgraph it appears in.
-      labels[node] = clusterId;
+        labels[node] = clusterId;
     }
     clusterId++;
   }
