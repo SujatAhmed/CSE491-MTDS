@@ -155,25 +155,19 @@ def random_tests(
 # --------------------------------------------------------------------------------------------------
 
 # experiments = [
-#     {"n": 30, "t": 3, "th": 0.6, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
-#     {"n": 50, "t": 3, "th": 0.45, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
+#     {"n": 30, "t": 2, "th": 0.8, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
+#     {"n": 50, "t": 3, "th": 0.85, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
 #     # ADD MORE EXPERIMENTS HERE
 # ]
 
-experiments = [
-    {"n": 30, "t": 2, "th": 0.8, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
-    {"n": 50, "t": 3, "th": 0.85, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
-    # ADD MORE EXPERIMENTS HERE
-]
-
-# experiments = random_tests(
-#     n_min=30, n_max=300,
-#     t_min=3, t_max=6,
-#     th_min=0.3, th_max=0.8,
-#     temp_min=90, temp_max=250,
-#     alpha_min=0.8, alpha_max=0.99,
-#     count=20
-# )
+experiments = random_tests(
+    n_min=30, n_max=50,
+    t_min=3, t_max=4,
+    th_min=0.75, th_max=0.95,
+    temp_min=90, temp_max=130,
+    alpha_min=0.8, alpha_max=0.99,
+    count=5
+)
 
 # experiments = full_grid(
 #     n_range=range(30, 301, 10),

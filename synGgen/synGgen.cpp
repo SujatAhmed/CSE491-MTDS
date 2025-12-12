@@ -145,11 +145,12 @@ void connectNodes(vector<vector<int>> &adj,
           if (edges_added >= edges_cap)
             break;
 
-          // Skip if u and v belong to the same subgraph (should never happen
-          // here but just in case)
-          if (node_to_subgraph[u] == node_to_subgraph[v] &&
-              node_to_subgraph[u] != -1)
-            continue;
+          bool same_subgraph = false;
+          for (int s1 : node_to_subgraph[u])
+              for (int s2 : node_to_subgraph[v])
+                  if (s1 == s2) same_subgraph = true;
+
+          if (same_subgraph) continue;
 
           if (dis(gen) < prob_between) {
             adj[u][v] = adj[v][u] = 1;
@@ -166,10 +167,12 @@ void connectNodes(vector<vector<int>> &adj,
   for (const auto &sg : subgraphs) {
     for (int u : sg) {
       for (int v : unused_nodes) {
-        // Skip if both in same subgraph (should not happen here)
-        if (node_to_subgraph[u] == node_to_subgraph[v] &&
-            node_to_subgraph[u] != -1)
-          continue;
+        bool same_subgraph = false;
+        for (int s1 : node_to_subgraph[u])
+            for (int s2 : node_to_subgraph[v])
+                if (s1 == s2) same_subgraph = true;
+
+        if (same_subgraph) continue;
 
         if (dis(gen) < prob_external) {
           adj[u][v] = adj[v][u] = 1;
@@ -201,15 +204,10 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
 
   vector<int> available_nodes = full_node_set;
   vector<vector<int>> adj(n, vector<int>(n, 0));
-  vector<int> node_to_subgraph(n, -1); // -1 = not assigned
+  vector<vector<int>> node_to_subgraph(n); // store all subgraph IDs for overlapping
 
   for (int i = 1; i <= t; ++i) {
     int s = (n / t) - 1;
-  //     uniform_int_distribution<> size_dist(3, s);
-  //     int subgraph_size = size_dist(gen);
-    // Trying RD
-    // int subgraph_size = (rand() % (s - 3 + 1)) + 3;
-    // cout << "i:" << i << "\n";
 
     uniform_int_distribution<> sizeDist(3, s);  // subgraph size
     uniform_real_distribution<> triDist(th, 0.8);
@@ -220,23 +218,13 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
     vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
     makeClique(adj, subset);
     float current_density = triangleDensity(adj, subset, norm_k);
-    // cout << "\n\nafter forming cl: " << current_density << "\n\n";
-
-    // uniform_real_distribution<> density_dist(th, 0.8);
-    // double tridense = density_dist(gen);
-    // Trying RD
-    // double tridense = th + ((double)rand() / RAND_MAX) * (0.8 - th);
-    
-    // cout << "\ntd: " << tridense << " th: " << th;
 
     removeEdgesToMatchTriangleDensity(adj, subset, tridense, norm_k);
 
-    for (int node : subset) {
-      available_nodes.erase(
-          remove(available_nodes.begin(), available_nodes.end(), node),
-          available_nodes.end());
-      node_to_subgraph[node] = i; // Mark the TDS index
-    }
+  for (int node : subset) {
+      // do NOT remove from available_nodes → allow overlapping
+      node_to_subgraph[node].push_back(i); // store this subgraph ID
+  }
 
     triangle_subgraphs.push_back(subset);
   }
@@ -249,8 +237,6 @@ generateSyntheticGraph(int n, int t, double th, double prob_between,
   return {adj, node_to_subgraph};
 }
 
-
-// ==============================TEST K-TRUSS START==================================
 // Encode an edge u<v as a single number
 inline long long encodeEdge(int u, int v) {
     if (u > v) swap(u, v);
@@ -369,8 +355,6 @@ vector<unordered_set<int>> kTruss(vector<vector<int>> adj, int k) {
     return components;
 }
 
-// ==============================TEST K-TRUSS END++==================================
-
 
 void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
                                  const vector<vector<int>> &adj, float norm_k) {
@@ -401,7 +385,7 @@ void printTriangleDenseSubgraphs(const vector<vector<int>> &subgraphs,
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 7) {
+  if (argc < 9) {
     cerr << "Usage: " << argv[0]
          << " <output_filename.txt> <ground_truth_filename.labels> "
             "<seed_filename.txt> <n> <t> <th> <norm_k> <k-Truss>"
@@ -418,11 +402,6 @@ int main(int argc, char *argv[]) {
   float norm_k = stod(argv[7]); // k constant for normalization
   int k_truss = stod(argv[8]);  // k-truss
 
-  // string base_dir = "TestGraphs/Graphs/";
-  // string filePath = base_dir + filename;
-  // string labelPath = base_dir + "groundTruths/" + label_filename;
-  // string seedPath = base_dir + "seeds/" + seed_filename;
-
   string filePath = filename;
   string labelPath = label_filename;
   string seedPath = seed_filename;
@@ -433,11 +412,6 @@ int main(int argc, char *argv[]) {
   int max_edges_between_subgraphs = max(1, int((1.0 - th) * 5));
 
   vector<vector<int>> triangle_subgraph;
-
-  // vector<vector<int>> graph =
-  //     generateSyntheticGraph(n, t, th, prob_between, prob_external,
-  //                            prob_amongNonSub, max_edges_between_subgraphs);
-  //
 
   auto [graph, labels] = generateSyntheticGraph(
       n, t, th, prob_between, prob_external, prob_amongNonSub,
@@ -453,30 +427,27 @@ int main(int argc, char *argv[]) {
   }
   outfile.close();
 
-  // cout << "Graph saved to " << filename << endl;
-
   ofstream label_file(labelPath);
-  for (int i = 0; i < labels.size(); ++i) {
-    bool has_edge = false;
-    for (int j = 0; j < graph[i].size(); ++j) {
-      if (graph[i][j] == 1) {
-        has_edge = true;
-        break;
+  for (int i = 0; i < n; ++i) {
+      bool has_edge = false;
+      for (int j = 0; j < graph[i].size(); ++j) {
+          if (graph[i][j] == 1) { has_edge = true; break; }
       }
-    }
+      if (!has_edge) continue; // skip isolated nodes
 
-    if (!has_edge)
-      continue; // Skip nodes with no connections
-
-    label_file << i << " ";
-    if (labels[i] == -1)
-      label_file << -1 << "\n";
-    else
-      label_file << labels[i] << "\n";
+      label_file << i << " ";
+      if (node_to_subgraph[i].empty())
+          label_file << -1 << "\n"; // no subgraph
+      else {
+          for (size_t j = 0; j < node_to_subgraph[i].size(); ++j) {
+              if (j > 0) label_file << " ";
+              label_file << node_to_subgraph[i][j];
+          }
+          label_file << "\n";
+      }
   }
   label_file.close();
-  // cout << "Cluster labels saved to " << label_filename << endl;
-// ===================test========================
+
     vector<vector<int>> adj_list(n);
     for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
@@ -485,7 +456,7 @@ int main(int argc, char *argv[]) {
     auto subgraphs = kTruss(adj_list, k_truss);
 
   ofstream seed_file(seedPath);
-  for (const auto &subgraph : subgraphs) {  // subgraphs is vector<unordered_set<int>>
+  for (const auto &subgraph : subgraphs) {  
       bool first = true;
       for (int node : subgraph) {
           if (!first) seed_file << " ";
@@ -496,10 +467,5 @@ int main(int argc, char *argv[]) {
   }
   seed_file.close();
   
-
-// ===================test========================
-  // cout << "Seed triangles saved to " << seed_filename << endl;
-
-
   return 0;
 }
