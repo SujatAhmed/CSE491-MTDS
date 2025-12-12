@@ -1,5 +1,3 @@
-
-
 #ifndef SUBGRAPH_ADJACENCY_H
 #define SUBGRAPH_ADJACENCY_H
 

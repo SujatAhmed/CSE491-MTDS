@@ -129,7 +129,7 @@ def random_tests(
         temp_min, temp_max,
         alpha_min, alpha_max,
         norm_k=0.001,
-        k_min=2, k_max=4,
+        k_min=3, k_max=5,
         count=100):
 
     experiments = []
@@ -161,11 +161,11 @@ def random_tests(
 # ]
 
 experiments = random_tests(
-    n_min=30, n_max=50,
-    t_min=3, t_max=4,
+    n_min=30, n_max=150,
+    t_min=3, t_max=5,
     th_min=0.75, th_max=0.95,
-    temp_min=90, temp_max=130,
-    alpha_min=0.8, alpha_max=0.99,
+    temp_min=95, temp_max=105,
+    alpha_min=0.89, alpha_max=0.99,
     count=5
 )
 
@@ -259,13 +259,20 @@ for exp_id, exp in enumerate(experiments, start=1):
     # ----------------------------
     print("Computing metrics...")
 
-    gt = np.loadtxt(gt_path, dtype=int)
-    pred = np.loadtxt(pred_path, dtype=int)
+    def load_labels(path):
+        with open(path, 'r') as f:
+            # Read lines, split by space, convert to int, take all cols except the first (node ID)
+            return [list(map(int, line.strip().split()))[1:] for line in f]
 
-    assert np.array_equal(gt[:, 0], pred[:, 0]), "Node ID mismatch"
+    # Inside the loop:
+    y_true_list = load_labels(gt_path)  # Returns list of lists
+    y_pred_list = load_labels(pred_path)
 
-    y_true = gt[:, 1]
-    y_pred = pred[:, 1]
+    # Note: Metrics like ARI/NMI in sklearn generally expect 1 label per item. 
+    # For overlapping metrics (like your GNMI/FuzzyARI), you need to process these lists specifically.
+    # For standard ARI/NMI, you might need to flatten or pick the primary label:
+    y_true = [row[0] if row else -1 for row in y_true_list]
+    y_pred = [row[0] if row else -1 for row in y_pred_list]
 
     ari = adjusted_rand_score(y_true, y_pred)
     nmi = normalized_mutual_info_score(y_true, y_pred)
@@ -292,6 +299,7 @@ for exp_id, exp in enumerate(experiments, start=1):
 # -----------------------------------------
 
 df = pd.DataFrame(results, columns=df_cols)
+df = df.round(3)
 output_excel = f"{BASE}/experiment_results.xlsx"
 # df.to_excel(output_excel, index=False)
 

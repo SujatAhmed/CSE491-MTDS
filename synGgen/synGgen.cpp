@@ -194,43 +194,55 @@ void connectNodes(vector<vector<int>> &adj,
 }
 
 // Main generator
-pair<vector<vector<int>>, vector<int>> 
+pair<vector<vector<int>>, vector<vector<int>>> 
 generateSyntheticGraph(int n, int t, double th, double prob_between,
                        double prob_external, double prob_amongNonSub,
                        int max_edges_between_subgraphs,
                        vector<vector<int>> &triangle_subgraphs, float norm_k) {
+  
   vector<int> full_node_set(n);
   iota(full_node_set.begin(), full_node_set.end(), 0);
 
-  vector<int> available_nodes = full_node_set;
+  // available_nodes stays full to allow overlapping selection
+  vector<int> available_nodes = full_node_set; 
   vector<vector<int>> adj(n, vector<int>(n, 0));
-  vector<vector<int>> node_to_subgraph(n); // store all subgraph IDs for overlapping
+  vector<vector<int>> node_to_subgraph(n); 
 
   for (int i = 1; i <= t; ++i) {
     int s = (n / t) - 1;
+    if (s < 3) s = 3; // Safety check if n/t is small
 
-    uniform_int_distribution<> sizeDist(3, s);  // subgraph size
+    uniform_int_distribution<> sizeDist(3, s);
     uniform_real_distribution<> triDist(th, 0.8);
 
     int subgraph_size = sizeDist(gen);
     float tridense = triDist(gen);
 
+    // Pick from all nodes to allow overlap
     vector<int> subset = randSubSetGen(available_nodes, subgraph_size);
     makeClique(adj, subset);
-    float current_density = triangleDensity(adj, subset, norm_k);
-
+    
+    // Adjust density
     removeEdgesToMatchTriangleDensity(adj, subset, tridense, norm_k);
 
-  for (int node : subset) {
-      // do NOT remove from available_nodes → allow overlapping
-      node_to_subgraph[node].push_back(i); // store this subgraph ID
-  }
+    for (int node : subset) {
+      node_to_subgraph[node].push_back(i); 
+    }
 
     triangle_subgraphs.push_back(subset);
   }
   printTriangleDenseSubgraphs(triangle_subgraphs, adj, norm_k);
 
-  connectNodes(adj, triangle_subgraphs, available_nodes, prob_between,
+  // FIX: Identify nodes that are TRULY unused (belong to no subgraph)
+  vector<int> real_unused_nodes;
+  for(int i = 0; i < n; ++i) {
+      if(node_to_subgraph[i].empty()) {
+          real_unused_nodes.push_back(i);
+      }
+  }
+
+  // Pass real_unused_nodes instead of available_nodes
+  connectNodes(adj, triangle_subgraphs, real_unused_nodes, prob_between,
                prob_external, prob_amongNonSub, max_edges_between_subgraphs, n,
                node_to_subgraph);
 
@@ -396,11 +408,11 @@ int main(int argc, char *argv[]) {
   string label_filename = argv[2];
   string seed_filename = argv[3];
 
-  int n = stoi(argv[4]);       // total nodes
-  int t = stoi(argv[5]);       // triangle-rich subgraphs
-  double th = stod(argv[6]);   // density threshold
-  float norm_k = stod(argv[7]); // k constant for normalization
-  int k_truss = stod(argv[8]);  // k-truss
+  int n = stoi(argv[4]);
+  int t = stoi(argv[5]);
+  double th = stod(argv[6]);
+  float norm_k = stod(argv[7]);
+  int k_truss = stoi(argv[8]); // Changed stod to stoi
 
   string filePath = filename;
   string labelPath = label_filename;
@@ -413,10 +425,12 @@ int main(int argc, char *argv[]) {
 
   vector<vector<int>> triangle_subgraph;
 
+  // FIX: Capture labels correctly
   auto [graph, labels] = generateSyntheticGraph(
       n, t, th, prob_between, prob_external, prob_amongNonSub,
       max_edges_between_subgraphs, triangle_subgraph, norm_k);
 
+  // Write Graph
   ofstream outfile(filePath);
   for (int i = 0; i < n; ++i) {
     for (int j = i + 1; j < n; ++j) {
@@ -427,33 +441,38 @@ int main(int argc, char *argv[]) {
   }
   outfile.close();
 
+  // Write Labels
   ofstream label_file(labelPath);
   for (int i = 0; i < n; ++i) {
       bool has_edge = false;
       for (int j = 0; j < graph[i].size(); ++j) {
           if (graph[i][j] == 1) { has_edge = true; break; }
       }
-      if (!has_edge) continue; // skip isolated nodes
+      if (!has_edge) continue; 
 
       label_file << i << " ";
-      if (node_to_subgraph[i].empty())
-          label_file << -1 << "\n"; // no subgraph
+      
+      // FIX: Use 'labels' variable here, not 'node_to_subgraph'
+      if (labels[i].empty())
+          label_file << -1 << "\n"; 
       else {
-          for (size_t j = 0; j < node_to_subgraph[i].size(); ++j) {
+          for (size_t j = 0; j < labels[i].size(); ++j) {
               if (j > 0) label_file << " ";
-              label_file << node_to_subgraph[i][j];
+              label_file << labels[i][j];
           }
           label_file << "\n";
       }
   }
   label_file.close();
 
-    vector<vector<int>> adj_list(n);
-    for (int i = 0; i < n; ++i)
+  // Generate Seeds via k-Truss
+  vector<vector<int>> adj_list(n);
+  for (int i = 0; i < n; ++i)
     for (int j = 0; j < n; ++j)
       if (graph[i][j])
         adj_list[i].push_back(j);
-    auto subgraphs = kTruss(adj_list, k_truss);
+        
+  auto subgraphs = kTruss(adj_list, k_truss);
 
   ofstream seed_file(seedPath);
   for (const auto &subgraph : subgraphs) {  
