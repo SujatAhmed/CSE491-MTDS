@@ -23,9 +23,17 @@ Experiments = [
     )
 ]
 
+output_path = "experiments.txt"
+
+# Write all experiments to the output file
+with open(output_path, "w", encoding="utf-8") as f:
+    for exp in Experiments:
+        f.write(", ".join(map(str, exp)) + "\n")
+
 # Example: print first few experiments
-for exp in Experiments[:(len(Experiments))]:
+for exp in Experiments[: len(Experiments)]:
     print(exp)
 
 # Total number of combinations
 print("Total experiments:", len(Experiments))
+print(f"All experiments written to {output_path}")
