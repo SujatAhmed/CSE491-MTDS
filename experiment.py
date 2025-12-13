@@ -11,7 +11,7 @@ import os
 # -----------------------------------------
 # CONFIGURE PATHS
 # -----------------------------------------
-BASE = "/home/alek/CSE491-MTDS"
+BASE = "/home/sujat/projects/cse491/"
 SYN = f"{BASE}/synGgen/syng"
 MTDS = f"{BASE}/build/MTDS"
 
@@ -19,6 +19,9 @@ GRAPHS_DIR = f"{BASE}/TestGraphs/Graphs"
 GT_DIR = f"{GRAPHS_DIR}/groundTruths"
 SEED_DIR = f"{GRAPHS_DIR}/seeds"
 PRED_DIR = f"{GRAPHS_DIR}/PredictedLabels"
+
+
+EXPERIMENTS_FILE = os.path.join(os.path.dirname(__file__), "experiments.txt")
 
 # Ensure dirs exist
 os.makedirs(GRAPHS_DIR, exist_ok=True)
@@ -122,62 +125,39 @@ def full_grid(n_range, t_range, th_range, temp_range, alpha_range,
     return experiments
 
 
-def random_tests(
-        n_min, n_max,
-        t_min, t_max,
-        th_min, th_max,
-        temp_min, temp_max,
-        alpha_min, alpha_max,
-        norm_k=0.001,
-        k_min=3, k_max=5,
-        count=100):
-
-    experiments = []
-    for _ in range(count):
-        experiments.append({
-            "n": random.randint(n_min, n_max),
-            "t": random.randint(t_min, t_max),
-            "th": round(random.uniform(th_min, th_max), 3),
-            "temp": random.randint(temp_min, temp_max),
-            "alpha": round(random.uniform(alpha_min, alpha_max), 3),
-            "norm_k": norm_k,
-            "k_Truss": random.randint(k_min, k_max)
-        })
-    return experiments
 
 # --------------------------------------------------------------------------------------------------
 # EXPERIMENT FUNCTIONS
 # --------------------------------------------------------------------------------------------------
 
 
-# --------------------------------------------------------------------------------------------------
-# EXPERIMENT CONFIGURATION
-# --------------------------------------------------------------------------------------------------
 
-# experiments = [
-#     {"n": 30, "t": 2, "th": 0.8, "temp": 100, "alpha": 0.95, "norm_k" : 0.001, "k_Truss": 3},
-#     {"n": 50, "t": 3, "th": 0.85, "temp": 200, "alpha": 0.90, "norm_k" : 0.001, "k_Truss": 3},
-#     # ADD MORE EXPERIMENTS HERE
-# ]
+def load_experiments_from_file(path, norm_k=0.001):
+    experiments = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line_no, raw_line in enumerate(f, start=1):
+            line = raw_line.strip()
+            if not line:
+                continue
 
-experiments = random_tests(
-    n_min=30, n_max=150,
-    t_min=3, t_max=5,
-    th_min=0.75, th_max=0.95,
-    temp_min=95, temp_max=105,
-    alpha_min=0.89, alpha_max=0.99,
-    count=5
-)
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) != 6:
+                raise ValueError(f"Line {line_no}: expected 6 values, got {len(parts)}")
 
-# experiments = full_grid(
-#     n_range=range(30, 301, 10),
-#     t_range=range(3, 7),
-#     th_range=np.arange(0.3, 0.81, 0.05),
-#     temp_range=range(90, 251, 20),
-#     alpha_range=np.arange(0.8, 1.0, 0.05),
-#     norm_k=0.001,
-#     ktruss_range=range(2, 5)
-# )
+            n, th, t, k_truss, temp, alpha = parts
+            experiments.append({
+                "n": int(n),
+                "t": int(t),
+                "th": float(th),
+                "temp": int(temp),
+                "alpha": float(alpha),
+                "norm_k": norm_k,
+                "k_Truss": int(k_truss)
+            })
+    return experiments
+
+
+experiments = load_experiments_from_file(EXPERIMENTS_FILE)
 
 # --------------------------------------------------------------------------------------------------
 # DATAFRAME INIT
@@ -205,7 +185,7 @@ for exp_id, exp in enumerate(experiments, start=1):
     th = exp["th"]
     temp = exp["temp"]
     alpha = exp["alpha"]
-    norm_k = exp["norm_k"]
+    norm_k = 0.001
     k_Truss = exp["k_Truss"]
 
 
@@ -323,3 +303,104 @@ else:
 
 print("\n=== ALL EXPERIMENTS COMPLETE ===")
 print("Saved Excel at:", output_excel)
+
+
+# Check if the Excel file already exists
+if os.path.exists(output_excel):
+    print("\nExisting Excel found. Appending new results...")
+
+    # 1. Read the existing DataFrame
+    df_existing = pd.read_excel(output_excel)
+
+    # 2. Concatenate the existing data with the new results
+    df_combined = pd.concat([df_existing, df], ignore_index=True)
+
+    # 3. Save the combined DataFrame back to the file (overwriting with combined data)
+    df_combined.to_excel(output_excel, index=False)
+
+    final_df = df_combined
+else:
+    print("No existing Excel found. Creating new file...")
+
+    # If the file doesn't exist, just save the new results
+    df.to_excel(output_excel, index=False)
+
+    final_df = df
+
+# -----------------------------------------
+# CREATE BEST ROWS FOR EACH COMBINATION
+# -----------------------------------------
+
+# Define the grouping columns
+grouping_cols = ["Nodes", "TDS_Count", "Density"]
+
+# Function to get best rows for each metric
+def get_best_rows_by_metric(df, metric_col):
+    """Get the row with the best metric value for each unique combination of grouping columns."""
+    best_rows = []
+    
+    # Group by the specified columns
+    for group_key, group_df in df.groupby(grouping_cols):
+        # Find the row with maximum metric value
+        best_idx = group_df[metric_col].idxmax()
+        best_row = group_df.loc[best_idx].copy()
+        
+        # Add a column to indicate what this row represents
+        best_row["Selection_Criteria"] = f"Best_{metric_col}"
+        
+        best_rows.append(best_row)
+    
+    return pd.DataFrame(best_rows)
+
+# Get best GNMI rows
+best_gnmi_df = get_best_rows_by_metric(final_df, "GNMI")
+
+# Get best FuzzyARI rows  
+best_fuzzyari_df = get_best_rows_by_metric(final_df, "FuzzyARI")
+
+# Sort both dataframes by Nodes, TDS_Count, Density for better readability
+best_gnmi_df = best_gnmi_df.sort_values(by=grouping_cols).reset_index(drop=True)
+best_fuzzyari_df = best_fuzzyari_df.sort_values(by=grouping_cols).reset_index(drop=True)
+
+# -----------------------------------------
+# SAVE TO EXCEL WITH MULTIPLE SHEETS
+# -----------------------------------------
+
+print("\nSaving results to Excel with multiple sheets...")
+
+with pd.ExcelWriter(output_excel, engine='openpyxl') as writer:
+    # Save all results to "All_Results" sheet
+    final_df.to_excel(writer, sheet_name='All_Results', index=False)
+    
+    # Save best GNMI rows to "Best_GNMI" sheet
+    best_gnmi_df.to_excel(writer, sheet_name='Best_GNMI', index=False)
+    
+    # Save best FuzzyARI rows to "Best_FuzzyARI" sheet
+    best_fuzzyari_df.to_excel(writer, sheet_name='Best_FuzzyARI', index=False)
+    
+    # Optional: Add a summary sheet
+    summary_data = {
+        "Sheet": ["All_Results", "Best_GNMI", "Best_FuzzyARI"],
+        "Rows": [len(final_df), len(best_gnmi_df), len(best_fuzzyari_df)],
+        "Description": [
+            "All experimental results",
+            "Best row for each (Nodes, TDS_Count, Density) combination based on GNMI",
+            "Best row for each (Nodes, TDS_Count, Density) combination based on FuzzyARI"
+        ]
+    }
+    pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
+
+print("\n=== ALL EXPERIMENTS COMPLETE ===")
+print(f"Saved Excel at: {output_excel}")
+print(f"\nSheet breakdown:")
+print(f"1. All_Results: {len(final_df)} rows (all experiment data)")
+print(f"2. Best_GNMI: {len(best_gnmi_df)} rows (best GNMI for each parameter combination)")
+print(f"3. Best_FuzzyARI: {len(best_fuzzyari_df)} rows (best FuzzyARI for each parameter combination)")
+print(f"4. Summary: Overview of all sheets")
+
+# Optional: Display sample of best rows
+print(f"\nSample of Best_GNMI rows (first 5):")
+print(best_gnmi_df[["Name", "Nodes", "TDS_Count", "Density", "GNMI"]].head().to_string(index=False))
+
+print(f"\nSample of Best_FuzzyARI rows (first 5):")
+print(best_fuzzyari_df[["Name", "Nodes", "TDS_Count", "Density", "FuzzyARI"]].head().to_string(index=False))

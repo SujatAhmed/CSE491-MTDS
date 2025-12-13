@@ -1,0 +1,6 @@
+cdlib
+numpy
+pandas
+scikit-learn
+scipy
+openpyxl
