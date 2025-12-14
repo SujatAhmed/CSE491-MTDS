@@ -1,12 +1,12 @@
 from itertools import product
 
 # Sorted input lists (examples; replace with your actual lists)
-n_list = [30, 50]
+n_list = [ 80, 90, 100, 200, 300, 400]
 theta_list = [ 0.8, 0.9]
 TDS_list = [ 2, 3, 4]
 k_truss_list = [3, 4, 5]
-T_list = [ 125, 150, 175, 200, 225, 250]
-alpha_list = [0.85, 0.90, 0.95]
+T_list = [ 80, 90, 100, 200, 250, 300, 400]
+alpha_list = [0.2, 0.3, 0.4, 0.5, 0.8, 0.9]
 
 # Generate all combinations
 # Order matters: n (most significant) → alpha (least significant)
