@@ -14,7 +14,7 @@ import sys
 # -----------------------------------------
 # CONFIGURE PATHS
 # -----------------------------------------
-BASE = "/home/alek/CSE491-MTDS"
+BASE = "/home/sujat/projects/cse491"
 SYN = f"{BASE}/synGgen/syng"
 MTDS = f"{BASE}/build/MTDS"
 
