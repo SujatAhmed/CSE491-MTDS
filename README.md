@@ -10,7 +10,8 @@ This project uses CMake with the Ninja generator to build the `MTDS` binary.
    ```
 2. Build the binary:
    ```bash
-   cmake --build build
+   cd build 
+   ninja
    ```
 
 The resulting executable will be at `build/MTDS`.
