@@ -26,7 +26,6 @@ The experiment scripts invoke the built `MTDS` binary and the SynGGen generator.
    ```
 2. Update the `BASE` path in the experiment scripts to point to your local repo
    path (for example, `/absolute/path/to/CSE491-MTDS`).
-   * `experiment.py`
    * `experiment2.py`
 3. Ensure the MTDS binary exists at `build/MTDS` and SynGGen is available at
    `synGgen/syng` (the scripts derive both paths from `BASE`).
@@ -36,6 +35,7 @@ The experiment scripts invoke the built `MTDS` binary and the SynGGen generator.
    - ```
      pyhton generate_experiments.py
      ```
+   - The script produces an `experiments.txt` file which the other scripts can read
 5. Run the experiments:
 
    
