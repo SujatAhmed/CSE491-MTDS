@@ -48,4 +48,4 @@ The experiment scripts invoke the built `MTDS` binary and the `syng` binary.
    python experiment2.py
    ```
 
-The scripts read experiment configurations from `experiments.txt`.
+  - The script read experiment configurations from `experiments.txt`.
