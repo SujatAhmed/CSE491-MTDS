@@ -89,7 +89,7 @@ set<int> simulated_annealing_v(set<int> &seed, float threshold,
         triangle_count = T_Sprime;
       } else {
         float delta = E_Sprime - E_S;
-        float prob = exp((delta * S.size()) / temperature);
+        float prob = exp(delta  / temperature);
         // cout << "Not improved. Delta = " << delta
         //      << ", Acceptance probability = " << prob << endl;
         if (should_accept(delta, temperature)) {
