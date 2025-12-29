@@ -6,15 +6,20 @@ This project uses CMake with the Ninja generator to build the `MTDS` binary.
 
 1. Create a build directory and configure the project:
    ```bash
-   cmake -S . -B build -G Ninja
+   mkdir build 
+   cd build
+   cmake -G Ninja ..
    ```
-2. Build the binary:
+2. Build the binary (Go to the build directory if you haven't already):
    ```bash
-   cd build 
    ninja
    ```
+3. Create the syng binary
+   ```bash
+   cd synGgen
+   g++ synGgen.cpp -o syng
 
-The resulting executable will be at `build/MTDS`.
+The resulting executable will be at `build/MTDS` and `synGgen/syng`
 
 ## Run experiments (Python)
 
@@ -32,7 +37,7 @@ The experiment scripts invoke the built `MTDS` binary and the SynGGen generator.
 
 4. Generate experiments:
    - Change the parameters in `generate_experiments.py` to create certain combinations of experiments
-   - ```
+   - ```bash
      pyhton generate_experiments.py
      ```
    - The script produces an `experiments.txt` file which the other scripts can read
