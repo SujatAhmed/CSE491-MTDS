@@ -23,7 +23,7 @@ The resulting executable will be at `build/MTDS` and `synGgen/syng`
 
 ## Run experiments (Python)
 
-The experiment scripts invoke the built `MTDS` binary and the SynGGen generator.
+The experiment scripts invoke the built `MTDS` binary and the `syng` binary.
 
 1. Install Python dependencies:
    ```bash
