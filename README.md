@@ -30,11 +30,15 @@ The experiment scripts invoke the built `MTDS` binary and the SynGGen generator.
    * `experiment2.py`
 3. Ensure the MTDS binary exists at `build/MTDS` and SynGGen is available at
    `synGgen/syng` (the scripts derive both paths from `BASE`).
-4. Run the experiments:
-   ```bash
-   python experiment.py
-   ```
-   or
+
+4. Generate experiments:
+   - Change the parameters in `generate_experiments.py` to create certain combinations of experiments
+   - ```
+     pyhton generate_experiments.py
+     ```
+5. Run the experiments:
+
+   
    ```bash
    python experiment2.py
    ```
